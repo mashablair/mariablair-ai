@@ -15,7 +15,8 @@ Pushing to `main` deploys automatically through Cloudflare Pages.
 
 ## Booking and payment
 
-Clients call or text (805) 636-6461 to book. After the call, send them the Stripe payment link for the AI Training Session ($99 per hour, 1 hour minimum).
+- Free 20-minute call: the pop-up asks visitors to email mashablair@gmail.com.
+- Paid session: the "Book a session" buttons open the Stripe payment link (AI Training Session, $99 per hour, 1 to 10 hours). After paying, Stripe shows the phone number to text or call to schedule.
 
 ## Later
 
