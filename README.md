@@ -1,4 +1,4 @@
-# mariablair.ai
+# mariablairai.com
 
 One-page website for **Maria Blair, AI Consulting**: in-person AI training and setup for businesses in Boca Raton, Delray Beach and Palm Beach County.
 
@@ -13,10 +13,10 @@ No build step. Cloudflare Pages serves the repo root as-is.
 
 Pushing to `main` deploys automatically through Cloudflare Pages.
 
-## Before launch
+## Booking and payment
 
-Search `index.html` for these comments and replace the placeholders:
+Clients call or text (805) 636-6461 to book. After the call, send them the Stripe payment link for the AI Training Session ($99 per hour, 1 hour minimum).
 
-- `PHONE`: your phone number (two places)
-- `BOOKING`: your Calendly or Cal.com link
-- `TESTIMONIAL`: uncomment after your first client
+## Later
+
+- `TESTIMONIAL`: uncomment the section in `index.html` after your first client
