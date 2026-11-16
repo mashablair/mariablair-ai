@@ -425,11 +425,12 @@ enabled = true
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
 
-# One email for both first-time and returning sign-ins: a link plus a 6-digit code.
-[auth.email.template.magic_link]
-subject = "Your sign-in link for Maria Blair AI Consulting"
-content_path = "./supabase/templates/sign_in.html"
+# Waiting for Resend: Supabase only allows custom email templates once custom SMTP is set.
+# Uncomment these (and add [auth.email.smtp]) when the Resend key exists, then: npx supabase config push
+# [auth.email.template.magic_link]
+# subject = "Your sign-in link for Maria Blair AI Consulting"
+# content_path = "./supabase/templates/sign_in.html"
 
-[auth.email.template.confirmation]
-subject = "Your sign-in link for Maria Blair AI Consulting"
-content_path = "./supabase/templates/sign_in.html"
+# [auth.email.template.confirmation]
+# subject = "Your sign-in link for Maria Blair AI Consulting"
+# content_path = "./supabase/templates/sign_in.html"
