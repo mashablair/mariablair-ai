@@ -5,7 +5,7 @@ import { Field, Textarea } from './kit'
 export function EditableText({ label, hint, value, rows = 4, onSave }: { label: string; hint?: string; value: string | null; rows?: number; onSave(value: string | null): Promise<unknown> }) {
   const [text, setText] = useState(value ?? '')
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-  useEffect(() => setText(value ?? ''), [value])
+  useEffect(() => { setText(value ?? '') }, [value])
   const save = async () => {
     const next = text.trim() === '' ? null : text.trim()
     if (next === (value ?? null)) return

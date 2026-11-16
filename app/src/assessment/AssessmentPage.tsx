@@ -19,7 +19,7 @@ const OPTION =
 
 function QuestionStep({ q, value, onChange, onNext }: { q: Question; value: string | string[] | undefined; onChange(v: string | string[]): void; onNext(): void }) {
   const heading = useRef<HTMLHeadingElement>(null)
-  useEffect(() => heading.current?.focus(), [q.id]) // move screen readers and keyboards to the new question
+  useEffect(() => { heading.current?.focus() }, [q.id]) // move screen readers and keyboards to the new question
   const chosen = value === undefined ? [] : Array.isArray(value) ? value : [value]
   const atMax = q.type === 'multi' && q.max != null && chosen.length >= q.max
 
@@ -68,7 +68,7 @@ export function AssessmentPage() {
 
   // Each step starts at the top of the page (matters on phones after a long question).
   const stepKey = step.kind === 'question' ? step.index : step.kind
-  useEffect(() => window.scrollTo(0, 0), [stepKey])
+  useEffect(() => { window.scrollTo(0, 0) }, [stepKey]) // braces matter: scrollTo may return a promise, and an effect must not
 
   const track = trackOf(answers)
   const questions = useMemo(() => questionsFor(track), [track])
