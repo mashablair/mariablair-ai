@@ -13,6 +13,8 @@ const PIPELINE: Stage[] = ['new', 'contacted', 'assessment_completed', 'consulta
 export function Dashboard() {
   const contacts = useList('contacts')
   const tasks = useList('tasks', { where: { done_at: null }, order: { column: 'due_date' } })
+  const review = useList('payments')
+  const toReview = (review.data ?? []).filter((p) => p.match_status !== 'matched').length
   const update = useUpdate('contacts')
   const [adding, setAdding] = useState(false)
   const now = today()
@@ -32,6 +34,8 @@ export function Dashboard() {
       <Loaded queries={[contacts, tasks]}>{() => (
         <>
           <p className="text-muted">{dueCount === 0 ? 'Nothing is due today.' : `${dueCount} ${dueCount === 1 ? 'thing is' : 'things are'} due.`}</p>
+
+          {toReview > 0 && <p className="mt-3"><Link className="underline text-danger" to="/admin/billing">{toReview} Stripe {toReview === 1 ? 'payment needs' : 'payments need'} review</Link></p>}
 
           <Section title="Follow-ups due">
             {followUps.length === 0 && <Empty>No follow-ups in the next 7 days.</Empty>}

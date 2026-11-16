@@ -1,4 +1,4 @@
-import { materialKind, type Material } from '@shared/types'
+import { materialKind, type ClientProduct, type ClientSession, type Material, type Payment, type Recommendation } from '@shared/types'
 import type { AssessmentSubmission, ContactBalance, Insert, LinkKey, LinkName, LinkTables, Patch, Row, TableName, Tables } from '@shared/types'
 import type { Query, Repository } from './repository'
 import { scoreAssessment, describeAnswers, submissionSchema, type Answers, type AssessmentResult, type SubmissionInput } from '@shared/assessmentEngine'
@@ -162,6 +162,40 @@ export class DemoRepository implements Repository {
   async myMaterials(): Promise<Material[]> {
     const granted = new Set(this.data.material_grants.filter((g) => g.contact_id === DEMO_CLIENT_CONTACT_ID).map((g) => g.material_id))
     return (await this.list('materials')).filter((m) => granted.has(m.id))
+  }
+
+  async myRecommendations(): Promise<Recommendation[]> {
+    return this.list('recommendations', { where: { contact_id: DEMO_CLIENT_CONTACT_ID, shared: true }, order: { column: 'sort_order' } })
+  }
+
+  async myProducts(): Promise<ClientProduct[]> {
+    const mine = await this.list('entitlements', { where: { contact_id: DEMO_CLIENT_CONTACT_ID } })
+    return mine.flatMap((entitlement) => {
+      const offer = this.data.offers.find((o) => o.id === entitlement.offer_id)
+      return offer ? [{ entitlement, offer: structuredClone(offer) }] : []
+    })
+  }
+
+  async mySessions(): Promise<ClientSession[]> {
+    return (await this.list('sessions', { where: { contact_id: DEMO_CLIENT_CONTACT_ID } }))
+      .map(({ id, type, status, title, scheduled_at, duration_minutes, client_visible_summary }) => ({ id, type, status, title, scheduled_at, duration_minutes, client_visible_summary }))
+  }
+
+  /** Stands in for the Stripe webhook: same matching rules as record_stripe_event(), no real money. */
+  async simulateStripePayment(kind: 'known' | 'unknown'): Promise<Payment> {
+    const offer = this.data.offers.find((o) => o.key === 'ai_training_session')!
+    const contact = kind === 'known' ? this.data.contacts.find((c) => c.id === 'c-2')! : null
+    const n = Math.random().toString(36).slice(2, 10)
+    const payment = await this.insert('payments', {
+      contact_id: contact?.id ?? null, offer_id: offer.id, amount_cents: 19800, method: 'stripe',
+      payer_email: contact?.email ?? 'jordan.pike@example.com', payer_name: contact ? `${contact.first_name} ${contact.last_name}` : 'Jordan Pike',
+      stripe_checkout_session_id: `cs_demo_${n}`, stripe_payment_intent_id: `pi_demo_${n}`, match_status: contact ? 'matched' : 'unmatched',
+    })
+    if (contact) {
+      await this.insert('entitlements', { contact_id: contact.id, offer_id: offer.id, source: 'purchase', payment_id: payment.id })
+      if (['new', 'contacted', 'assessment_completed', 'consultation'].includes(contact.stage)) await this.update('contacts', contact.id, { stage: 'active_client' })
+    }
+    return payment
   }
 
   // In the demo, the "client view" is always the same fictional client.

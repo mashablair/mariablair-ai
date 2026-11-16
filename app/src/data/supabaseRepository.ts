@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { materialKind, type AssessmentSubmission, type Material } from '@shared/types'
+import { materialKind, type AssessmentSubmission, type ClientProduct, type ClientSession, type Entitlement, type Material, type Offer, type Recommendation } from '@shared/types'
 import type { ContactBalance, Insert, LinkKey, LinkName, LinkTables, Patch, Row, TableName } from '@shared/types'
 import type { Query, Repository } from './repository'
 
@@ -85,6 +85,24 @@ export class SupabaseRepository implements Repository {
 
   async myMaterials(): Promise<Material[]> {
     return unwrap(await this.db.from('materials').select('*').order('created_at', { ascending: false })) as Material[]
+  }
+
+  async myRecommendations(): Promise<Recommendation[]> {
+    return unwrap(await this.db.from('recommendations').select('*').eq('shared', true).order('sort_order')) as Recommendation[]
+  }
+
+  async myProducts(): Promise<ClientProduct[]> {
+    const entitlements = unwrap(await this.db.from('entitlements').select('*').order('created_at', { ascending: false })) as Entitlement[]
+    if (entitlements.length === 0) return []
+    const offers = unwrap(await this.db.from('offers').select('*').in('id', [...new Set(entitlements.map((e) => e.offer_id))])) as Offer[]
+    return entitlements.flatMap((entitlement) => {
+      const offer = offers.find((o) => o.id === entitlement.offer_id)
+      return offer ? [{ entitlement, offer }] : []
+    })
+  }
+
+  async mySessions(): Promise<ClientSession[]> {
+    return unwrap(await this.db.rpc('my_sessions')) as ClientSession[]
   }
 
   // Row Level Security returns only the signed-in client's own rows.

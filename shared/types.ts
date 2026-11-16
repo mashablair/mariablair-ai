@@ -78,6 +78,10 @@ export type Payment = Stamps & {
 export type Entitlement = { id: string; contact_id: string; offer_id: string; source: 'purchase' | 'grant'; payment_id: string | null; created_at: string }
 export type ContactBalance = { contact_id: string; charged_cents: number; paid_cents: number; balance_cents: number }
 
+/** The client-safe slice of a session (what my_sessions() returns). */
+export type ClientSession = Pick<Session, 'id' | 'type' | 'status' | 'title' | 'scheduled_at' | 'duration_minutes' | 'client_visible_summary'>
+export type ClientProduct = { entitlement: Entitlement; offer: Offer }
+
 /** Tables with a single `id` primary key, usable with the generic list/get/insert/update/remove. */
 export type Tables = {
   companies: Company

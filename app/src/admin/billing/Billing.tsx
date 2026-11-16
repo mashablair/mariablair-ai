@@ -3,6 +3,8 @@ import { Link } from 'react-router'
 import { nextInvoiceRef, sessionAmountCents } from '@shared/billing'
 import { PAYMENT_METHODS, formatMoney, fullName, type Charge, type Contact, type Payment, type PaymentMethod, type Session } from '@shared/types'
 import { repo } from '@/data'
+import type { DemoRepository } from '@/data/demoRepository'
+import { matchPayment } from '@/data/repository'
 import { useBalances, useList, useRemove, useWrite } from '@/data/hooks'
 import { formatDate, formatDuration, fromCents, orNull, toCents, today } from '@/lib/format'
 import { Badge, Button, Empty, Field, Input, Modal, Notice, PageHeader, Select, cx } from '@/ui/kit'
@@ -177,7 +179,68 @@ export function SessionBilling({ session }: { session: Session }) {
   )
 }
 
-export function BillingPage({ reviewQueue }: { reviewQueue?: React.ReactNode }) {
+function ReviewRow({ payment, contacts }: { payment: Payment; contacts: Contact[] }) {
+  const offers = useList('offers', { order: { column: 'name' } })
+  const suggested = payment.contact_id ?? contacts.find((c) => c.email && c.email === payment.payer_email)?.id ?? ''
+  const [contactId, setContactId] = useState(suggested)
+  const [offerId, setOfferId] = useState(payment.offer_id ?? '')
+  const match = useWrite(async (createNew: boolean) => {
+    let id = contactId
+    if (createNew) {
+      const [first = 'Unknown', ...rest] = (payment.payer_name ?? payment.payer_email ?? 'Unknown').split(/\s+/)
+      id = (await repo().insert('contacts', { first_name: first, last_name: rest.join(' '), email: payment.payer_email, stage: 'active_client', source: 'Stripe payment' })).id
+    }
+    await matchPayment(repo(), payment, id, offerId || null)
+  })
+  const remove = useRemove('payments')
+  return (
+    <li className="border border-line p-3 grid gap-3">
+      <div className="flex flex-wrap justify-between gap-x-4">
+        <span><span className="font-medium">{payment.payer_name ?? 'Unknown payer'}</span>{payment.payer_email && <span className="text-muted"> · {payment.payer_email}</span>}</span>
+        <span className="font-medium tabular-nums">{formatMoney(payment.amount_cents)} <span className="text-sm text-muted font-normal">· {METHOD_LABELS[payment.method]} · {formatDate(payment.paid_on)}</span></span>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+        <Select aria-label="Who paid" value={contactId} onChange={(e) => setContactId(e.target.value)}>
+          <option value="">Who is this from?</option>
+          {contacts.map((c) => <option key={c.id} value={c.id}>{fullName(c)}</option>)}
+        </Select>
+        <Select aria-label="What they bought" value={offerId} onChange={(e) => setOfferId(e.target.value)}>
+          <option value="">What did they buy? (optional)</option>
+          {offers.data?.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+        </Select>
+        <Button disabled={!contactId || match.isPending} onClick={() => match.mutate(false)}>Match</Button>
+      </div>
+      {match.error && <Notice tone="danger">{match.error.message}</Notice>}
+      <p className="text-sm text-muted">
+        {!suggested && <><button type="button" className="underline cursor-pointer" disabled={match.isPending} onClick={() => match.mutate(true)}>Create a new contact from this payment</button> · </>}
+        <button type="button" className="underline cursor-pointer" onClick={() => confirm('Remove this payment record? The money in Stripe is not affected.') && remove.mutate(payment.id)}>Not a client payment, remove</button>
+      </p>
+    </li>
+  )
+}
+
+/** Stripe payments the system could not match with certainty. They do not count toward balances until matched. */
+function ReviewQueue({ payments, contacts }: { payments: Payment[]; contacts: Contact[] }) {
+  const simulate = useWrite((kind: 'known' | 'unknown') => (repo() as DemoRepository).simulateStripePayment(kind))
+  const queue = payments.filter((p) => p.match_status !== 'matched')
+  if (queue.length === 0 && !repo().isDemo) return null
+  return (
+    <Section title={`Payments to review${queue.length ? ` (${queue.length})` : ''}`}>
+      {repo().isDemo && (
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <span className="text-sm text-muted">Demo: pretend Stripe just told us about a $198 payment</span>
+          <Button variant="outline" onClick={() => simulate.mutate('known')}>From a known client</Button>
+          <Button variant="outline" onClick={() => simulate.mutate('unknown')}>From an unknown email</Button>
+        </div>
+      )}
+      {queue.length === 0 ? <Empty>Nothing to review. Clear payments are matched automatically.</Empty> : (
+        <ul className="list-none p-0 m-0 grid gap-3">{queue.map((p) => <ReviewRow key={p.id} payment={p} contacts={contacts} />)}</ul>
+      )}
+    </Section>
+  )
+}
+
+export function BillingPage() {
   const contacts = useList('contacts')
   const charges = useList('charges')
   const payments = useList('payments')
@@ -195,7 +258,7 @@ export function BillingPage({ reviewQueue }: { reviewQueue?: React.ReactNode }) 
         const totalOwed = owing.filter((b) => b.balance_cents > 0).reduce((n, b) => n + b.balance_cents, 0)
         return (
           <>
-            {reviewQueue}
+            <ReviewQueue payments={payments.data!} contacts={[...contacts.data!].sort((a, b) => fullName(a).localeCompare(fullName(b)))} />
             <Section title="Balances">
               <p className="text-muted mb-2">{totalOwed > 0 ? `${formatMoney(totalOwed)} outstanding in total.` : 'Nobody owes anything.'}</p>
               <ul className="list-none p-0 m-0">
