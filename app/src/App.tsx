@@ -7,6 +7,7 @@ import { ContactsPage } from '@/admin/crm/ContactsPage'
 import { EventPage, EventsPage } from '@/admin/crm/EventsPage'
 import { ImportContacts } from '@/admin/crm/ImportContacts'
 import { Dashboard } from '@/admin/Dashboard'
+import { AssessmentPage } from '@/assessment/AssessmentPage'
 import { AuthProvider } from '@/auth/AuthProvider'
 import { RequireAccount } from '@/auth/guards'
 import { IS_DEMO, ROUTER_BASENAME } from '@/lib/mode'
@@ -37,6 +38,7 @@ export function App() {
           <Routes>
             {IS_DEMO && <Route index element={<Navigate to="/admin" replace />} />}
             <Route path="/login" element={<Login />} />
+            <Route path="/assessment" element={<AssessmentPage />} />
             <Route path="/admin" element={<RequireAccount admin>{() => <AdminLayout />}</RequireAccount>}>
               <Route index element={<Dashboard />} />
               <Route path="contacts" element={<ContactsPage />} />
@@ -48,7 +50,7 @@ export function App() {
               <Route path="events/:id" element={<EventPage />} />
             </Route>
             <Route path="/portal" element={<RequireAccount>{() => <PortalLayout />}</RequireAccount>}>
-              <Route index element={<PortalHome />} />
+              <Route index element={<RequireAccount>{(account) => <PortalHome account={account} />}</RequireAccount>} />
             </Route>
             <Route path="/app/*" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />

@@ -1,6 +1,7 @@
-import type { ContactBalance, Insert, LinkKey, LinkName, LinkTables, Patch, Row, TableName, Tables } from '@shared/types'
+import type { AssessmentSubmission, ContactBalance, Insert, LinkKey, LinkName, LinkTables, Patch, Row, TableName, Tables } from '@shared/types'
 import type { Query, Repository } from './repository'
-import { demoSeed, type DemoData } from './demoSeed'
+import { scoreAssessment, describeAnswers, submissionSchema, type Answers, type AssessmentResult, type SubmissionInput } from '@shared/assessmentEngine'
+import { DEMO_CLIENT_CONTACT_ID, demoSeed, type DemoData } from './demoSeed'
 
 // What the database would fill in on insert.
 const DEFAULTS: { [T in TableName]: Partial<Row<T>> } = {
@@ -132,6 +133,44 @@ export class DemoRepository implements Repository {
       const paid_cents = sum(paid, c.id)
       return { contact_id: c.id, charged_cents, paid_cents, balance_cents: charged_cents - paid_cents }
     })
+  }
+
+  // In the demo, the "client view" is always the same fictional client.
+  async mySubmissions(): Promise<AssessmentSubmission[]> {
+    return this.list('assessment_submissions', { where: { contact_id: DEMO_CLIENT_CONTACT_ID } })
+  }
+
+  /** What POST /api/assessment + submit_assessment() do, replayed in memory (no email is sent). */
+  async submitAssessment(input: SubmissionInput): Promise<{ result: AssessmentResult; contactId: string }> {
+    const { contact, answers } = submissionSchema.parse(input)
+    const result = scoreAssessment(answers as Answers)
+    const described = describeAnswers(answers as Answers)
+    const answerTo = (id: string) => described.find((d) => d.id === id)?.answer ?? null
+    let existing = this.data.contacts.find((c) => c.email === contact.email)
+    if (!existing) {
+      let company_id: string | null = null
+      if (contact.company) {
+        company_id = this.data.companies.find((c) => c.name.toLowerCase() === contact.company.toLowerCase())?.id
+          ?? (await this.insert('companies', { name: contact.company, business_type: answerTo('b_industry') })).id
+      }
+      existing = await this.insert('contacts', {
+        first_name: contact.first_name, last_name: contact.last_name, email: contact.email, company_id,
+        business_type: answerTo('b_industry'), stage: 'assessment_completed', source: 'Assessment',
+        ai_needs: result.track === 'business' ? `Biggest win: ${answerTo('b_win')}.` : `Wants help with: ${answerTo('i_goals')}.`,
+      })
+    } else if (existing.stage === 'new' || existing.stage === 'contacted') {
+      await this.update('contacts', existing.id, { stage: 'assessment_completed' })
+    }
+    const submission = await this.insert('assessment_submissions', {
+      contact_id: existing.id, track: result.track, answers: answers as Answers, score: result.score, level: result.level,
+      recommendations: result.recommendations, offer_key: result.offerKey,
+    })
+    for (const [i, r] of result.recommendations.entries()) {
+      await this.insert('recommendations', { contact_id: existing.id, submission_id: submission.id, title: r.title, body: r.body, sort_order: i + 1 })
+    }
+    const due = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+    await this.insert('tasks', { contact_id: existing.id, title: `Follow up on assessment: ${`${contact.first_name} ${contact.last_name}`.trim()} (${result.levelName})`, due_date: due })
+    return { result, contactId: existing.id }
   }
 }
 

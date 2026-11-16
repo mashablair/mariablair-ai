@@ -18,7 +18,7 @@ describe('api', () => {
   it('answers the health check', async () => {
     const res = await app.request('/api/health')
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ ok: true })
+    expect(await res.json()).toMatchObject({ ok: true, configured: { database: false } })
   })
   it('returns JSON 404s', async () => {
     const res = await app.request('/api/nope')

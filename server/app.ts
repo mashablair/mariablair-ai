@@ -1,4 +1,6 @@
 import { Hono } from 'hono'
+import { handleAssessment } from './assessment'
+import { realDeps, type Deps } from './deps'
 
 // Secrets and settings provided by Cloudflare (Pages secrets in production, .dev.vars locally).
 export type Env = {
@@ -16,12 +18,31 @@ export type AppContext = { Bindings: Env }
 
 // The API is deliberately thin: only things the browser must not do live here.
 // Written with Hono so it can move to a standalone Worker later without changes.
-export const app = new Hono<AppContext>().basePath('/api')
+export function createApp(deps: Deps = realDeps) {
+  const app = new Hono<AppContext>().basePath('/api')
 
-app.get('/health', (c) => c.json({ ok: true }))
+  // Says which integrations have their settings, without revealing any values.
+  app.get('/health', (c) => {
+    const env = c.env ?? ({} as Partial<Env>)
+    return c.json({
+      ok: true,
+      configured: {
+        database: Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY),
+        email: Boolean(env.RESEND_API_KEY && env.EMAIL_FROM),
+        botCheck: Boolean(env.TURNSTILE_SECRET_KEY),
+        stripe: Boolean(env.STRIPE_WEBHOOK_SECRET),
+      },
+    })
+  })
 
-app.notFound((c) => c.json({ error: 'not_found' }, 404))
-app.onError((err, c) => {
-  console.error(err)
-  return c.json({ error: 'server_error' }, 500)
-})
+  app.post('/assessment', (c) => handleAssessment(c, deps))
+
+  app.notFound((c) => c.json({ error: 'not_found' }, 404))
+  app.onError((err, c) => {
+    console.error(err)
+    return c.json({ error: 'server_error', message: 'Something went wrong on our side. Please try again.' }, 500)
+  })
+  return app
+}
+
+export const app = createApp()

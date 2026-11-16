@@ -1,4 +1,4 @@
-import type { ContactBalance, Insert, LinkKey, LinkName, LinkTables, Patch, Row, TableName } from '@shared/types'
+import type { AssessmentSubmission, ContactBalance, Insert, LinkKey, LinkName, LinkTables, Patch, Row, TableName } from '@shared/types'
 
 export type Query<T extends TableName> = {
   /** Exact-match filters. */
@@ -26,4 +26,7 @@ export interface Repository {
   unlink<T extends LinkName>(table: T, key: LinkKey<T>): Promise<void>
 
   balances(): Promise<ContactBalance[]>
+
+  // Client portal: what the signed-in client may see about themselves.
+  mySubmissions(): Promise<AssessmentSubmission[]>
 }

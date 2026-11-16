@@ -87,7 +87,18 @@ export function demoSeed(): DemoData {
       { id: 't-3', contact_id: null, title: 'Order new business cards', due_date: day(7), done_at: null, ...stamps(-4) },
       { id: 't-4', contact_id: 'c-2', title: 'Send chamber follow-up email', due_date: day(-38), done_at: at(-38), ...stamps(-40) },
     ],
-    assessment_submissions: [],
+    assessment_submissions: [
+      {
+        id: 'a-1', contact_id: 'c-1', version_id: null, track: 'business', score: 3, level: 'experimenting', offer_key: 'ai_training_session', created_at: at(-58),
+        answers: { track: 'business', b_industry: 'health', b_team: 'small', b_time: ['email', 'paperwork'], b_use: 'tried', b_tools: ['free_chat'],
+          b_data: 'yes', b_win: 'time', b_comfort: 'mixed', b_timeline: 'soon', location: 'boca' },
+        recommendations: [
+          { title: 'Set simple privacy rules first', body: 'Because you handle private client information, decide what may and may not be typed into an AI tool, and turn on the privacy settings in the tools you use.' },
+          { title: 'Let AI draft your everyday emails', body: 'Save three or four prompts for the emails you write most: replies, follow-ups, polite reminders. You review and send.' },
+          { title: 'Hand the paperwork to AI', body: 'Start with one document you handle every week and have AI do the first pass.' },
+        ],
+      },
+    ],
     intake_templates: [],
     intake_responses: [],
     recommendations: [],

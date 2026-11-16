@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { ContactBalance, Insert, LinkKey, LinkName, LinkTables, Patch, Row, TableName } from '@shared/types'
+import type { AssessmentSubmission, ContactBalance, Insert, LinkKey, LinkName, LinkTables, Patch, Row, TableName } from '@shared/types'
 import type { Query, Repository } from './repository'
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
@@ -50,5 +50,10 @@ export class SupabaseRepository implements Repository {
 
   async balances(): Promise<ContactBalance[]> {
     return unwrap(await this.db.from('contact_balances').select('*')) as ContactBalance[]
+  }
+
+  // Row Level Security returns only the signed-in client's own rows.
+  async mySubmissions(): Promise<AssessmentSubmission[]> {
+    return unwrap(await this.db.from('assessment_submissions').select('*').order('created_at', { ascending: false })) as AssessmentSubmission[]
   }
 }
