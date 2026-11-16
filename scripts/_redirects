@@ -1,0 +1,11 @@
+# SPA routes -> the React app shell. The target is "/app/" (not "/app/index.html"):
+# Cloudflare Pages redirects any ".../index.html" target to its folder, which would change the URL.
+/assessment /app/ 200
+/admin /app/ 200
+/portal /app/ 200
+/login /app/ 200
+/demo /app/ 200
+/assessment/* /app/ 200
+/admin/* /app/ 200
+/portal/* /app/ 200
+/demo/* /app/ 200

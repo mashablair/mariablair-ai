@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "pages", "runtimeExecutable": "npx", "runtimeArgs": ["wrangler", "pages", "dev", "dist", "--port", "8788"], "port": 8788 },
+    { "name": "vite", "runtimeExecutable": "npx", "runtimeArgs": ["vite", "--port", "5173"], "port": 5173 }
+  ]
+}

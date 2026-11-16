@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/* "Coastal & Upscale": the same variables as the marketing page (index.html at the repo root). */
+:root {
+  --bg: #FFFFFF; --sand: #F5F1EA; --ink: #12324A; --muted: #4F6475; --line: #E3DCCF;
+  --brass: #7F6236; --deep: #12324A; --on-deep: #F5F1EA; --on-deep-muted: #D5DEE3;
+  --brass-on-deep: #D9C29A; --btn: #12324A; --btn-ink: #FFFFFF;
+  --danger: #A23B2D; --ok: #2F6B4F;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0C1A24; --sand: #12232F; --ink: #EEF2F4; --muted: #A9B8C3; --line: #263A48;
+    --brass: #D9C29A; --deep: #163349; --on-deep: #F5F1EA; --on-deep-muted: #C9D4DB;
+    --brass-on-deep: #D9C29A; --btn: #F5F1EA; --btn-ink: #12324A;
+    --danger: #F0A093; --ok: #8FD0AE;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0C1A24; --sand: #12232F; --ink: #EEF2F4; --muted: #A9B8C3; --line: #263A48;
+  --brass: #D9C29A; --deep: #163349; --on-deep: #F5F1EA; --on-deep-muted: #C9D4DB;
+  --brass-on-deep: #D9C29A; --btn: #F5F1EA; --btn-ink: #12324A;
+  --danger: #F0A093; --ok: #8FD0AE;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-sand: var(--sand);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-brass: var(--brass);
+  --color-deep: var(--deep);
+  --color-on-deep: var(--on-deep);
+  --color-on-deep-muted: var(--on-deep-muted);
+  --color-brass-on-deep: var(--brass-on-deep);
+  --color-btn: var(--btn);
+  --color-btn-ink: var(--btn-ink);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+  --font-display: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --font-body: "Jost", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--font-body); font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 500; text-wrap: balance; }
+  :focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  /* 16px minimum stops iOS from zooming into fields. */
+  input, select, textarea { font-size: 16px; }
+}
+
+@utility label-caps {
+  font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 500; color: var(--brass);
+}
