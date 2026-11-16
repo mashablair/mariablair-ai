@@ -22,6 +22,7 @@ function setup(over: Partial<Deps> = {}) {
     verifyTurnstile: async (_e, token) => token === 'good',
     saveSubmission: async (_e, args) => { saved.push(args); return { contact_id: 'c1', submission_id: 's1', is_new_contact: true } },
     sendEmail: async (_e, email) => { emails.push(email) },
+    recordStripeEvent: async () => ({ status: 'stored' }),
     ...over,
   }
   const app = createApp(deps)

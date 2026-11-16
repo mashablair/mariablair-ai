@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { handleAssessment } from './assessment'
 import { realDeps, type Deps } from './deps'
+import { handleStripeWebhook } from './stripe'
 
 // Secrets and settings provided by Cloudflare (Pages secrets in production, .dev.vars locally).
 export type Env = {
@@ -36,6 +37,7 @@ export function createApp(deps: Deps = realDeps) {
   })
 
   app.post('/assessment', (c) => handleAssessment(c, deps))
+  app.post('/stripe/webhook', (c) => handleStripeWebhook(c, deps))
 
   app.notFound((c) => c.json({ error: 'not_found' }, 404))
   app.onError((err, c) => {
