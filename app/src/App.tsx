@@ -8,6 +8,7 @@ import { EventPage, EventsPage } from '@/admin/crm/EventsPage'
 import { ImportContacts } from '@/admin/crm/ImportContacts'
 import { Dashboard } from '@/admin/Dashboard'
 import { IntakePage } from '@/admin/intake/IntakePage'
+import { MaterialsPage } from '@/admin/materials/MaterialsPage'
 import { SessionPage, SessionsPage } from '@/admin/sessions/SessionsPage'
 import { AssessmentPage } from '@/assessment/AssessmentPage'
 import { AuthProvider } from '@/auth/AuthProvider'
@@ -53,6 +54,7 @@ export function App() {
               <Route path="sessions" element={<SessionsPage />} />
               <Route path="sessions/:id" element={<SessionPage />} />
               <Route path="intake" element={<IntakePage />} />
+              <Route path="materials" element={<MaterialsPage />} />
             </Route>
             <Route path="/portal" element={<RequireAccount>{() => <PortalLayout />}</RequireAccount>}>
               <Route index element={<RequireAccount>{(account) => <PortalHome account={account} />}</RequireAccount>} />

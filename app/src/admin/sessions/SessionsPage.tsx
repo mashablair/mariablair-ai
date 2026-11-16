@@ -6,6 +6,7 @@ import { formatDateTime, formatDuration } from '@/lib/format'
 import { EditableText } from '@/ui/EditableText'
 import { Badge, Button, Empty, Modal, Notice, PageHeader } from '@/ui/kit'
 import { Notes } from '../crm/Notes'
+import { SessionMaterials } from '../materials/MaterialsPage'
 import { Fact, Loaded, Section } from '../crm/shared'
 import { STATUS_LABELS, SessionForm } from './SessionForm'
 
@@ -66,7 +67,7 @@ export function SessionsPage() {
   )
 }
 
-export function SessionPage({ extras }: { extras?: (session: Session) => React.ReactNode }) {
+export function SessionPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const session = useRow('sessions', id)
@@ -103,7 +104,7 @@ export function SessionPage({ extras }: { extras?: (session: Session) => React.R
               <EditableText label="Summary for the client" hint="The client can see this in their account." value={s.client_visible_summary} onSave={save('client_visible_summary')} />
             </div>
           </Section>
-          {extras?.(s)}
+          <SessionMaterials session={s} />
           <Notes scope={{ session_id: s.id }} />
           <Section title="Danger zone">
             <Button variant="danger" onClick={() => {

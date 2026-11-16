@@ -1,3 +1,4 @@
+import { materialKind, type Material } from '@shared/types'
 import type { AssessmentSubmission, ContactBalance, Insert, LinkKey, LinkName, LinkTables, Patch, Row, TableName, Tables } from '@shared/types'
 import type { Query, Repository } from './repository'
 import { scoreAssessment, describeAnswers, submissionSchema, type Answers, type AssessmentResult, type SubmissionInput } from '@shared/assessmentEngine'
@@ -133,6 +134,34 @@ export class DemoRepository implements Repository {
       const paid_cents = sum(paid, c.id)
       return { contact_id: c.id, charged_cents, paid_cents, balance_cents: charged_cents - paid_cents }
     })
+  }
+
+  private files = new Map<string, string>() // storage_path -> object URL
+
+  async uploadMaterial(file: File, meta: { title: string; tags: string[] }): Promise<Material> {
+    const path = `${crypto.randomUUID()}/${file.name}`
+    this.files.set(path, URL.createObjectURL(file))
+    return this.insert('materials', {
+      title: meta.title, tags: meta.tags, storage_path: path, file_name: file.name, mime_type: file.type || null, size_bytes: file.size, kind: materialKind(file.name),
+    })
+  }
+
+  async removeMaterial(material: Material): Promise<void> {
+    const url = this.files.get(material.storage_path)
+    if (url) URL.revokeObjectURL(url)
+    this.files.delete(material.storage_path)
+    await this.remove('materials', material.id)
+  }
+
+  async materialUrl(material: Material): Promise<string> {
+    // Seeded demo files have no real content: hand back a small text file that says so.
+    return this.files.get(material.storage_path)
+      ?? URL.createObjectURL(new Blob([`"${material.title}" is a placeholder file in the demo.\n`], { type: 'text/plain' }))
+  }
+
+  async myMaterials(): Promise<Material[]> {
+    const granted = new Set(this.data.material_grants.filter((g) => g.contact_id === DEMO_CLIENT_CONTACT_ID).map((g) => g.material_id))
+    return (await this.list('materials')).filter((m) => granted.has(m.id))
   }
 
   // In the demo, the "client view" is always the same fictional client.

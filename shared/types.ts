@@ -128,3 +128,21 @@ export type Patch<T extends TableName> = Partial<Omit<Row<T>, 'id' | 'created_at
 export const fullName = (c: Pick<Contact, 'first_name' | 'last_name'>) => `${c.first_name} ${c.last_name}`.trim()
 export const formatMoney = (cents: number) =>
   (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: cents % 100 === 0 ? 0 : 2 })
+
+/** A friendly kind for a file, from its name. */
+export function materialKind(fileName: string): string {
+  const ext = fileName.split('.').pop()?.toLowerCase() ?? ''
+  if (['ppt', 'pptx', 'key'].includes(ext)) return 'slides'
+  if (ext === 'pdf') return 'pdf'
+  if (['doc', 'docx', 'txt', 'md', 'rtf', 'pages'].includes(ext)) return 'document'
+  if (['xls', 'xlsx', 'csv', 'numbers'].includes(ext)) return 'spreadsheet'
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'heic'].includes(ext)) return 'image'
+  if (['mp4', 'mov', 'webm', 'm4v'].includes(ext)) return 'video'
+  if (['mp3', 'm4a', 'wav'].includes(ext)) return 'audio'
+  return 'file'
+}
+export const MATERIAL_KIND_LABELS: Record<string, string> = {
+  slides: 'Slides', pdf: 'PDF', document: 'Document', spreadsheet: 'Spreadsheet', image: 'Image', video: 'Video', audio: 'Audio', file: 'File',
+}
+export const formatBytes = (n: number | null) =>
+  n == null ? '' : n < 1024 ? `${n} B` : n < 1048576 ? `${Math.round(n / 1024)} KB` : `${(n / 1048576).toFixed(1)} MB`

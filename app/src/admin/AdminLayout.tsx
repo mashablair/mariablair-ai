@@ -12,6 +12,7 @@ export const ADMIN_NAV: { to: string; label: string; end?: boolean }[] = [
   { to: '/admin/events', label: 'Events' },
   { to: '/admin/sessions', label: 'Sessions' },
   { to: '/admin/intake', label: 'Intake forms' },
+  { to: '/admin/materials', label: 'Materials' },
 ]
 
 export function AdminLayout() {

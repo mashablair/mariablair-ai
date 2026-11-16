@@ -1,4 +1,4 @@
-import type { AssessmentSubmission, ContactBalance, Insert, LinkKey, LinkName, LinkTables, Patch, Row, TableName } from '@shared/types'
+import type { AssessmentSubmission, ContactBalance, Material, Insert, LinkKey, LinkName, LinkTables, Patch, Row, TableName } from '@shared/types'
 
 export type Query<T extends TableName> = {
   /** Exact-match filters. */
@@ -27,6 +27,12 @@ export interface Repository {
 
   balances(): Promise<ContactBalance[]>
 
+  // Files. Stored in a private bucket; downloads go through short-lived signed links.
+  uploadMaterial(file: File, meta: { title: string; tags: string[] }): Promise<Material>
+  removeMaterial(material: Material): Promise<void>
+  materialUrl(material: Material): Promise<string>
+
   // Client portal: what the signed-in client may see about themselves.
   mySubmissions(): Promise<AssessmentSubmission[]>
+  myMaterials(): Promise<Material[]>
 }

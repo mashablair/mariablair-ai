@@ -113,9 +113,16 @@ export function demoSeed(): DemoData {
       { id: 'r-2', contact_id: 'c-1', submission_id: 'a-1', title: 'Let AI draft your everyday emails', body: 'Saved prompts for reminders, recalls and insurance appeals.', shared: true, sort_order: 2, ...stamps(-58) },
       { id: 'r-3', contact_id: 'c-1', submission_id: 'a-1', title: 'Hand the paperwork to AI', body: 'Try insurance explanation-of-benefits summaries next.', shared: false, sort_order: 3, ...stamps(-58) },
     ],
-    materials: [],
-    session_materials: [],
-    material_grants: [],
+    materials: [
+      { id: 'm-1', title: 'ChatGPT quick-start guide', kind: 'pdf', storage_path: 'demo/quick-start.pdf', file_name: 'chatgpt-quick-start.pdf', mime_type: 'application/pdf', size_bytes: 482000, tags: ['basics', 'handout'], ...stamps(-70) },
+      { id: 'm-2', title: 'Session 1 slides: reminders and letters', kind: 'slides', storage_path: 'demo/session-1.pptx', file_name: 'session-1-reminders.pptx', mime_type: null, size_bytes: 3250000, tags: ['dental', 'slides'], ...stamps(-30) },
+      { id: 'm-3', title: 'AI privacy checklist for small offices', kind: 'document', storage_path: 'demo/privacy.docx', file_name: 'ai-privacy-checklist.docx', mime_type: null, size_bytes: 88000, tags: ['privacy', 'handout'], ...stamps(-25) },
+    ],
+    session_materials: [{ session_id: 's-2', material_id: 'm-2', created_at: at(-30) }],
+    material_grants: [
+      { material_id: 'm-1', contact_id: 'c-1', created_at: at(-30) },
+      { material_id: 'm-2', contact_id: 'c-1', created_at: at(-30) },
+    ],
     offers: [
       offer('o-1', 'free_call', 'Free 20-minute call', 'session', 0, 'flat', 'A short call to see whether AI training is a fit.'),
       offer('o-2', 'ai_training_session', 'AI Training Session', 'session', 9900, 'hour', 'Private, in-person AI training. 1 to 10 hours.'),

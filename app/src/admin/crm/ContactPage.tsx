@@ -6,6 +6,7 @@ import { formatDate, today } from '@/lib/format'
 import { Button, Empty, Modal, Notice, PageHeader, Select, cx } from '@/ui/kit'
 import { ContactForm } from './ContactForm'
 import { AssessmentHistory, IntakeSection, RecommendationsSection, SessionsSection } from './ContactSections'
+import { ContactMaterials } from '../materials/MaterialsPage'
 import { Notes } from './Notes'
 import { Fact, Loaded, Section } from './shared'
 import { AddTask, TaskRow } from './Tasks'
@@ -78,6 +79,7 @@ export function ContactPage() {
           <AssessmentHistory contact={c} />
           <RecommendationsSection contact={c} />
           <IntakeSection contact={c} />
+          <ContactMaterials contact={c} />
 
           <Section title="Events">
             {attendedIds.size === 0 && <Empty>Not linked to any event.</Empty>}
