@@ -5,7 +5,12 @@ import { DemoBar } from '@/ui/DemoBar'
 import { Brand, cx } from '@/ui/kit'
 
 // Add an entry here when a slice ships its screen.
-export const ADMIN_NAV: { to: string; label: string; end?: boolean }[] = [{ to: '/admin', label: 'Today', end: true }]
+export const ADMIN_NAV: { to: string; label: string; end?: boolean }[] = [
+  { to: '/admin', label: 'Today', end: true },
+  { to: '/admin/contacts', label: 'Contacts' },
+  { to: '/admin/companies', label: 'Companies' },
+  { to: '/admin/events', label: 'Events' },
+]
 
 export function AdminLayout() {
   const { state, signOut } = useAuth()

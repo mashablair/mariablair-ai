@@ -76,7 +76,11 @@ export function Modal({ title, open, onClose, children }: { title: string; open:
   useEffect(() => {
     const d = ref.current
     if (!d) return
-    if (open && !d.open) d.showModal()
+    if (open && !d.open) {
+      d.showModal()
+      // Start in the first field rather than on the close button.
+      d.querySelector<HTMLElement>('input, select, textarea')?.focus()
+    }
     if (!open && d.open) d.close()
   }, [open])
   return (

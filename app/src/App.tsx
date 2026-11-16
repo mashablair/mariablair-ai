@@ -1,6 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { AdminLayout } from '@/admin/AdminLayout'
+import { CompaniesPage, CompanyPage } from '@/admin/crm/CompaniesPage'
+import { ContactPage } from '@/admin/crm/ContactPage'
+import { ContactsPage } from '@/admin/crm/ContactsPage'
+import { EventPage, EventsPage } from '@/admin/crm/EventsPage'
+import { ImportContacts } from '@/admin/crm/ImportContacts'
 import { Dashboard } from '@/admin/Dashboard'
 import { AuthProvider } from '@/auth/AuthProvider'
 import { RequireAccount } from '@/auth/guards'
@@ -34,6 +39,13 @@ export function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/admin" element={<RequireAccount admin>{() => <AdminLayout />}</RequireAccount>}>
               <Route index element={<Dashboard />} />
+              <Route path="contacts" element={<ContactsPage />} />
+              <Route path="contacts/import" element={<ImportContacts />} />
+              <Route path="contacts/:id" element={<ContactPage />} />
+              <Route path="companies" element={<CompaniesPage />} />
+              <Route path="companies/:id" element={<CompanyPage />} />
+              <Route path="events" element={<EventsPage />} />
+              <Route path="events/:id" element={<EventPage />} />
             </Route>
             <Route path="/portal" element={<RequireAccount>{() => <PortalLayout />}</RequireAccount>}>
               <Route index element={<PortalHome />} />
