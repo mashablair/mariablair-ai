@@ -40,9 +40,16 @@ describe('record_stripe_event', () => {
     expect((await db.query(`select 1 from stripe_events where id in ('evt_same', 'evt_other') and processed_at is not null`)).rows).toHaveLength(2)
   })
 
-  it('sends a known payer with an unknown product to review, without an entitlement or balance change', async () => {
+  it('ignores payments for products that are not consulting offers, keeping only the raw event', async () => {
+    const before = (await db.query<any>(`select count(*)::int as n from payments`)).rows[0].n
+    expect(await record(pay({ payment_link_id: 'plink_dating_course' }), 'evt_other_biz')).toEqual({ status: 'ignored' })
+    expect((await db.query<any>(`select count(*)::int as n from payments`)).rows[0].n).toBe(before)
+    expect((await db.query(`select 1 from stripe_events where id = 'evt_other_biz' and processed_at is not null`)).rows).toHaveLength(1)
+  })
+
+  it('sends a known payer with no payment link to review, without an entitlement or balance change', async () => {
     const before = (await db.query<any>(`select paid_cents from contact_balances where contact_id = $1`, [elena])).rows[0].paid_cents
-    const r = await record(pay({ payment_link_id: 'plink_mystery' }))
+    const r = await record(pay({ payment_link_id: null }))
     expect(r).toMatchObject({ status: 'needs_review', contact_id: elena, offer_id: null })
     expect((await db.query(`select 1 from entitlements where payment_id = $1`, [r.payment_id])).rows).toHaveLength(0)
     expect((await db.query<any>(`select paid_cents from contact_balances where contact_id = $1`, [elena])).rows[0].paid_cents).toBe(before)

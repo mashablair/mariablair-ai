@@ -2,8 +2,10 @@
 --
 -- Every event is stored raw. The event id is the primary key, so a redelivered event is a no-op.
 -- For a paid checkout (p_payment is not null) a payment row is created and matched conservatively:
+--   payment link that is not one of the offers here        -> ignored (the Stripe account also sells
+--                                                             unrelated products; the raw event is still kept)
 --   contact found by email AND offer found by payment link -> 'matched' (+ entitlement, client stage)
---   contact found by email only                            -> 'needs_review' (contact suggested)
+--   contact found by email, no payment link on the checkout -> 'needs_review' (contact suggested)
 --   no contact with that email                             -> 'unmatched'
 -- Only 'matched' payments count toward balances. Maria resolves the rest in the review queue.
 create or replace function public.record_stripe_event(
@@ -42,6 +44,10 @@ begin
   end if;
   if nullif(p_payment->>'payment_link_id', '') is not null then
     select id into v_offer_id from public.offers where stripe_payment_link_id = p_payment->>'payment_link_id';
+    if v_offer_id is null then
+      update public.stripe_events set processed_at = now() where id = p_event_id;
+      return jsonb_build_object('status', 'ignored');
+    end if;
   end if;
   v_status := case
     when v_contact_id is not null and v_offer_id is not null then 'matched'
@@ -72,3 +78,6 @@ end $$;
 
 revoke execute on function public.record_stripe_event(text, text, jsonb, jsonb) from public, anon, authenticated;
 grant execute on function public.record_stripe_event(text, text, jsonb, jsonb) to service_role;
+
+-- The live payment link behind the "Book a session" buttons (an id, not a secret).
+update public.offers set stripe_payment_link_id = 'plink_1UTlgZ1PqsZvBWX7RCGqOpQT' where key = 'ai_training_session';
