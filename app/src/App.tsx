@@ -7,6 +7,8 @@ import { ContactsPage } from '@/admin/crm/ContactsPage'
 import { EventPage, EventsPage } from '@/admin/crm/EventsPage'
 import { ImportContacts } from '@/admin/crm/ImportContacts'
 import { Dashboard } from '@/admin/Dashboard'
+import { IntakePage } from '@/admin/intake/IntakePage'
+import { SessionPage, SessionsPage } from '@/admin/sessions/SessionsPage'
 import { AssessmentPage } from '@/assessment/AssessmentPage'
 import { AuthProvider } from '@/auth/AuthProvider'
 import { RequireAccount } from '@/auth/guards'
@@ -48,6 +50,9 @@ export function App() {
               <Route path="companies/:id" element={<CompanyPage />} />
               <Route path="events" element={<EventsPage />} />
               <Route path="events/:id" element={<EventPage />} />
+              <Route path="sessions" element={<SessionsPage />} />
+              <Route path="sessions/:id" element={<SessionPage />} />
+              <Route path="intake" element={<IntakePage />} />
             </Route>
             <Route path="/portal" element={<RequireAccount>{() => <PortalLayout />}</RequireAccount>}>
               <Route index element={<RequireAccount>{(account) => <PortalHome account={account} />}</RequireAccount>} />

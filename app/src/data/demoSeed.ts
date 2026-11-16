@@ -1,4 +1,5 @@
 // Fictional people and companies for the /demo version. Nothing here is real.
+import { STANDARD_INTAKE } from '@shared/intake'
 import type { LinkTables, Tables } from '@shared/types'
 
 export type DemoData = { [T in keyof Tables]: Tables[T][] } & { [L in keyof LinkTables]: LinkTables[L][] }
@@ -99,9 +100,19 @@ export function demoSeed(): DemoData {
         ],
       },
     ],
-    intake_templates: [],
-    intake_responses: [],
-    recommendations: [],
+    intake_templates: [{ id: 'it-1', ...STANDARD_INTAKE, active: true, ...stamps(-80) }],
+    intake_responses: [
+      {
+        id: 'ir-1', template_id: 'it-1', contact_id: 'c-1', session_id: null, ...stamps(-48),
+        answers: { goals: 'Cut the time the front desk spends on reminders and insurance letters.', tasks: 'Appointment reminders, insurance appeals, recall emails.',
+          tools: 'Dentrix, Outlook, Google Calendar', ai_tools: 'ChatGPT free', devices: 'Windows laptop', sensitive: 'Patient names with treatment details.' },
+      },
+    ],
+    recommendations: [
+      { id: 'r-1', contact_id: 'c-1', submission_id: 'a-1', title: 'Set simple privacy rules first', body: 'One page: no patient names with treatment details in any AI tool. Turn off training in ChatGPT settings.', shared: true, sort_order: 1, ...stamps(-58) },
+      { id: 'r-2', contact_id: 'c-1', submission_id: 'a-1', title: 'Let AI draft your everyday emails', body: 'Saved prompts for reminders, recalls and insurance appeals.', shared: true, sort_order: 2, ...stamps(-58) },
+      { id: 'r-3', contact_id: 'c-1', submission_id: 'a-1', title: 'Hand the paperwork to AI', body: 'Try insurance explanation-of-benefits summaries next.', shared: false, sort_order: 3, ...stamps(-58) },
+    ],
     materials: [],
     session_materials: [],
     material_grants: [],
