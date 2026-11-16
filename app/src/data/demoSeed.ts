@@ -129,8 +129,18 @@ export function demoSeed(): DemoData {
       offer('o-3', 'team_workshop', 'Team workshop', 'workshop', null, 'flat', 'Hands-on AI workshop for a team, at your office.'),
       offer('o-4', 'advanced_automation', 'Advanced automation', 'session', null, 'flat', 'Custom AI workflows and automation setup.'),
     ],
-    charges: [],
-    payments: [],
-    entitlements: [],
+    charges: [
+      { id: 'ch-1', contact_id: 'c-1', session_id: 's-2', offer_id: 'o-2', description: 'Session 1: reminders and letters (2 hr)', amount_cents: 19800, invoice_ref: 'INV-0001', charged_on: day(-30), ...stamps(-30) },
+      { id: 'ch-2', contact_id: 'c-6', session_id: null, offer_id: 'o-2', description: 'AI Training Session (3 hr)', amount_cents: 29700, invoice_ref: 'INV-0002', charged_on: day(-100), ...stamps(-100) },
+    ],
+    payments: [
+      { id: 'p-1', contact_id: 'c-6', offer_id: 'o-2', amount_cents: 29700, method: 'check', paid_on: day(-95), reference: 'Check 1042', payer_email: null, payer_name: null,
+        stripe_event_id: null, stripe_checkout_session_id: null, stripe_payment_intent_id: null, match_status: 'matched', ...stamps(-95) },
+      { id: 'p-2', contact_id: 'c-1', offer_id: 'o-2', amount_cents: 9900, method: 'zelle', paid_on: day(-28), reference: 'Deposit', payer_email: null, payer_name: null,
+        stripe_event_id: null, stripe_checkout_session_id: null, stripe_payment_intent_id: null, match_status: 'matched', ...stamps(-28) },
+    ],
+    entitlements: [
+      { id: 'en-1', contact_id: 'c-1', offer_id: 'o-2', source: 'purchase', payment_id: 'p-2', created_at: at(-28) },
+    ],
   }
 }

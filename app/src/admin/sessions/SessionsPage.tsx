@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { SESSION_TYPE_LABELS, formatMoney, fullName, type Session } from '@shared/types'
+import { sessionAmountCents } from '@shared/billing'
 import { useList, useRemove, useRow, useUpdate } from '@/data/hooks'
 import { formatDateTime, formatDuration } from '@/lib/format'
 import { EditableText } from '@/ui/EditableText'
 import { Badge, Button, Empty, Modal, Notice, PageHeader } from '@/ui/kit'
+import { SessionBilling } from '../billing/Billing'
 import { Notes } from '../crm/Notes'
 import { SessionMaterials } from '../materials/MaterialsPage'
 import { Fact, Loaded, Section } from '../crm/shared'
@@ -80,7 +82,7 @@ export function SessionPage() {
       const s = session.data
       if (!s) return <Notice>This session no longer exists. <Link className="underline" to="/admin/sessions">Back to sessions</Link></Notice>
       const save = (field: 'plan' | 'outcomes' | 'client_visible_summary') => (value: string | null) => update.mutateAsync({ id: s.id, patch: { [field]: value } })
-      const total = s.duration_minutes != null && s.agreed_rate_cents != null ? Math.round((s.duration_minutes / 60) * s.agreed_rate_cents) : null
+      const total = sessionAmountCents(s.duration_minutes, s.agreed_rate_cents)
       return (
         <>
           <p className="mb-2"><Link className="text-sm text-muted underline" to="/admin/sessions">← Sessions</Link></p>
@@ -104,6 +106,7 @@ export function SessionPage() {
               <EditableText label="Summary for the client" hint="The client can see this in their account." value={s.client_visible_summary} onSave={save('client_visible_summary')} />
             </div>
           </Section>
+          <SessionBilling session={s} />
           <SessionMaterials session={s} />
           <Notes scope={{ session_id: s.id }} />
           <Section title="Danger zone">

@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { AdminLayout } from '@/admin/AdminLayout'
+import { BillingPage } from '@/admin/billing/Billing'
 import { CompaniesPage, CompanyPage } from '@/admin/crm/CompaniesPage'
 import { ContactPage } from '@/admin/crm/ContactPage'
 import { ContactsPage } from '@/admin/crm/ContactsPage'
@@ -55,6 +56,7 @@ export function App() {
               <Route path="sessions/:id" element={<SessionPage />} />
               <Route path="intake" element={<IntakePage />} />
               <Route path="materials" element={<MaterialsPage />} />
+              <Route path="billing" element={<BillingPage />} />
             </Route>
             <Route path="/portal" element={<RequireAccount>{() => <PortalLayout />}</RequireAccount>}>
               <Route index element={<RequireAccount>{(account) => <PortalHome account={account} />}</RequireAccount>} />

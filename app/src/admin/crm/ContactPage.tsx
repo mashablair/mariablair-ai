@@ -6,6 +6,7 @@ import { formatDate, today } from '@/lib/format'
 import { Button, Empty, Modal, Notice, PageHeader, Select, cx } from '@/ui/kit'
 import { ContactForm } from './ContactForm'
 import { AssessmentHistory, IntakeSection, RecommendationsSection, SessionsSection } from './ContactSections'
+import { ContactBilling } from '../billing/Billing'
 import { ContactMaterials } from '../materials/MaterialsPage'
 import { Notes } from './Notes'
 import { Fact, Loaded, Section } from './shared'
@@ -76,6 +77,7 @@ export function ContactPage() {
           <Notes scope={{ contact_id: c.id }} />
 
           <SessionsSection contact={c} />
+          <ContactBilling contact={c} />
           <AssessmentHistory contact={c} />
           <RecommendationsSection contact={c} />
           <IntakeSection contact={c} />
