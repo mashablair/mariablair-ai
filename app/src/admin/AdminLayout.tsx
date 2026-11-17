@@ -27,7 +27,7 @@ export function AdminLayout() {
       <DemoBar />
       <div className="flex-1 md:grid md:grid-cols-[220px_1fr]">
         <aside className="hidden md:flex flex-col border-r border-line p-5 gap-6 sticky top-0 h-dvh">
-          <Brand to={IS_DEMO ? '/demo/admin' : '/admin'} />
+          <Brand to={IS_DEMO ? '/demo/admin' : '/'} />
           <nav aria-label="Admin" className="grid gap-1">
             {ADMIN_NAV.map((n) => <NavLink key={n.to} to={n.to} end={n.end} className={link}>{n.label}</NavLink>)}
           </nav>
@@ -38,7 +38,7 @@ export function AdminLayout() {
         </aside>
 
         <header className="md:hidden flex items-center justify-between border-b border-line px-4 py-3">
-          <Brand to={IS_DEMO ? '/demo/admin' : '/admin'} />
+          <Brand to={IS_DEMO ? '/demo/admin' : '/'} />
           {!IS_DEMO && <button type="button" className="text-sm underline text-muted cursor-pointer" onClick={() => signOut()}>Sign out</button>}
         </header>
 
