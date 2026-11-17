@@ -23,6 +23,7 @@ function setup(over: Partial<Deps> = {}) {
     saveSubmission: async (_e, args) => { saved.push(args); return { contact_id: 'c1', submission_id: 's1', is_new_contact: true } },
     sendEmail: async (_e, email) => { emails.push(email) },
     recordStripeEvent: async () => ({ status: 'stored' }),
+    requestCall: async () => ({ contact_id: 'c1', is_new_contact: true }),
     ...over,
   }
   const app = createApp(deps)

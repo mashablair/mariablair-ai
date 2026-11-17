@@ -53,7 +53,7 @@ Database changes: add a file to `supabase/migrations/`, then `npm run db:push`.
 
 ## Booking and payment
 
-- Free 20-minute call: the pop-up asks visitors to email mashablair@gmail.com.
+- Free 20-minute call: the pop-up is a short form. Each request becomes a contact (or updates an existing one), with the message as a private note, a follow-up task due today, a confirmation email to the visitor and a notification to Maria. Email stays available as a fallback. The email wording is in `shared/callRequest.ts`.
 - Paid session: the "Book a session" buttons open the Stripe payment link (AI Training Session, $99 per hour, 1 to 10 hours). After paying, Stripe shows the phone number to text or call to schedule.
 
 ## Later

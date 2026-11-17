@@ -3,9 +3,30 @@ import { ASSESSMENT_VERSION, LEVELS, OFFER_RULES, QUESTIONS, RECOMMENDATIONS } f
 import { describeAnswers, scoreAssessment, submissionSchema, validateAnswers, type Answers } from '../shared/assessmentEngine'
 import type { AppContext } from './app'
 import type { Deps } from './deps'
-import { adminNotificationEmail, resultsEmail } from './email'
+import { adminNotificationEmail, resultsEmail, type Email } from './email'
 
 const isLocal = (url: string | undefined) => !url || /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(url)
+
+/**
+ * Cloudflare Turnstile check for public forms. Returns a response to send back when the request must stop.
+ * Skipped only on a local machine with no secret set; anywhere else a missing secret is an error.
+ */
+export async function botCheck(c: Context<AppContext>, deps: Deps, token: string | undefined) {
+  const env = c.env
+  if (env.TURNSTILE_SECRET_KEY) {
+    if (!token || !(await deps.verifyTurnstile(env, token, c.req.header('CF-Connecting-IP')))) {
+      return c.json({ error: 'bot_check_failed', message: 'The security check did not pass. Please try again.' }, 403)
+    }
+    return null
+  }
+  return isLocal(env.PUBLIC_SITE_URL) ? null : c.json({ error: 'not_configured' }, 503)
+}
+
+/** Sends an email without letting a failure lose the lead that is already saved. Waits only when there is no request context. */
+export function sendInBackground(c: Context<AppContext>, deps: Deps, email: Email, label: string) {
+  const send = deps.sendEmail(c.env, email).catch((err) => console.error(`${label} failed`, err))
+  try { c.executionCtx.waitUntil(send); return Promise.resolve() } catch { return send }
+}
 
 /** POST /api/assessment: validate, bot check, store (contact + submission + task), email the results. */
 export async function handleAssessment(c: Context<AppContext>, deps: Deps) {
@@ -19,14 +40,8 @@ export async function handleAssessment(c: Context<AppContext>, deps: Deps) {
   const problem = validateAnswers(answers)
   if (problem) return c.json({ error: 'invalid', message: problem }, 400)
 
-  // Bot check. Skipped only on a local machine with no secret set; anywhere else a missing secret is an error.
-  if (env.TURNSTILE_SECRET_KEY) {
-    if (!turnstileToken || !(await deps.verifyTurnstile(env, turnstileToken, c.req.header('CF-Connecting-IP')))) {
-      return c.json({ error: 'bot_check_failed', message: 'The security check did not pass. Please try again.' }, 403)
-    }
-  } else if (!isLocal(env.PUBLIC_SITE_URL)) {
-    return c.json({ error: 'not_configured' }, 503)
-  }
+  const blocked = await botCheck(c, deps, turnstileToken)
+  if (blocked) return blocked
 
   const result = scoreAssessment(answers)
   const described = describeAnswers(answers)
@@ -65,8 +80,7 @@ export async function handleAssessment(c: Context<AppContext>, deps: Deps) {
     if (env.ADMIN_NOTIFY_EMAIL) {
       const note = adminNotificationEmail(env.ADMIN_NOTIFY_EMAIL, { name, email: contact.email, company: contact.company }, result, described,
         `${siteUrl.replace(/\/$/, '')}/admin/contacts/${saved.contact_id}`)
-      const send = deps.sendEmail(env, note).catch((err) => console.error('admin notification failed', err))
-      try { c.executionCtx.waitUntil(send) } catch { await send }
+      await sendInBackground(c, deps, note, 'admin notification')
     }
   }
   return c.json({ ok: true, emailed })

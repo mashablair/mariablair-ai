@@ -249,17 +249,29 @@ button.btn { font-family: var(--body); cursor: pointer; }
 .call-dialog .inner { padding: 36px 32px 32px; display: grid; gap: 18px; position: relative; }
 .call-dialog h2 { font-size: 36px; line-height: 1.1; }
 .call-dialog p { color: var(--muted); }
-.call-dialog .email-box {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
-  border: 1px solid var(--line); background: var(--sand); padding: 14px 16px;
-}
-.call-dialog .email-box b { font-weight: 500; font-size: 18px; overflow-wrap: anywhere; user-select: all; color: var(--ink); }
 .call-dialog .actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .call-dialog .close {
   position: absolute; top: 10px; right: 12px; background: none; border: 0; color: var(--muted);
   font-size: 28px; line-height: 1; cursor: pointer; padding: 6px 10px;
 }
-.copy-btn { font: 500 12px/1 var(--body); letter-spacing: 0.14em; text-transform: uppercase; background: transparent; color: var(--ink); border: 1px solid var(--ink); padding: 10px 14px; cursor: pointer; }
+.call-dialog { max-height: calc(100dvh - 32px); overflow: auto; }
+.call-form { display: grid; gap: 14px; }
+.call-form .row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+@media (max-width: 520px) { .call-form .row { grid-template-columns: 1fr; } .call-dialog .inner { padding: 32px 20px 24px; } }
+.call-form label { display: grid; gap: 6px; font-size: 14px; font-weight: 500; color: var(--ink); }
+.call-form label i { font-style: normal; color: var(--muted); font-weight: 400; }
+.call-form input, .call-form textarea {
+  font: 400 16px/1.5 var(--body); color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); padding: 11px 12px; width: 100%; border-radius: 0;
+}
+.call-form input:focus, .call-form textarea:focus { outline: none; border-color: var(--brass); }
+.call-form textarea { min-height: 96px; resize: vertical; }
+.call-form .btn { justify-self: start; cursor: pointer; font-family: var(--body); }
+.call-form .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+.call-form .error { color: #A23B2D; font-size: 15px; }
+:root[data-theme="dark"] .call-form .error { color: #F0A093; }
+.call-dialog .small { font-size: 15px; }
+.call-dialog .small a { color: var(--ink); }
 .price-note { font-size: 15px; color: var(--on-deep-muted); }
 
 /* Footer */
@@ -453,13 +465,27 @@ button.btn { font-family: var(--body); cursor: pointer; }
     <button type="button" class="close" data-close-call aria-label="Close">×</button>
     <p class="label">Free 20-minute call</p>
     <h2 id="free-call-title">Let's find a time to talk.</h2>
-    <p>Email me with your name, your business, and what's taking up your team's time. I'll reply within one business day to set up a call.</p>
-    <div class="email-box">
-      <b id="call-email">Loading…</b>
-      <button type="button" class="copy-btn" id="copy-email">Copy</button>
+    <div id="call-ask">
+      <p>Tell me a little about you and what's taking up your team's time. I'll reply within one business day to set up a call.</p>
     </div>
-    <div class="actions">
-      <a class="btn" id="open-email" href="#">Open email</a>
+    <form class="call-form" id="call-form" novalidate>
+      <div class="row">
+        <label>Name<input name="name" autocomplete="name" required maxlength="160"></label>
+        <label>Email<input name="email" type="email" inputmode="email" autocomplete="email" required maxlength="200"></label>
+      </div>
+      <div class="row">
+        <label><span class="t">Phone <i>(optional)</i></span><input name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="40"></label>
+        <label><span class="t">Business <i>(optional)</i></span><input name="company" autocomplete="organization" maxlength="120"></label>
+      </div>
+      <label><span class="t">What would you like help with? <i>(optional)</i></span><textarea name="message" maxlength="2000"></textarea></label>
+      <div id="call-turnstile"></div>
+      <p class="error" id="call-error" role="alert" hidden></p>
+      <button type="submit" class="btn" id="call-submit">Request a call</button>
+      <p class="small">Prefer email? Write to <a id="call-email-link" href="#">my email</a>.</p>
+    </form>
+    <div id="call-done" hidden>
+      <p>Thank you. Your request is in, and a confirmation is on its way to your inbox. I'll reply within one business day.</p>
+      <p class="small">While you wait, the <a href="/assessment">free 3-minute AI assessment</a> gives us a head start on the call.</p>
     </div>
   </div>
 </dialog>
@@ -489,16 +515,63 @@ button.btn { font-family: var(--body); cursor: pointer; }
   // Free call pop-up. The address is assembled here to keep it away from spam bots.
   var email = ['mashablair', 'gmail.com'].join('@');
   var dlg = document.getElementById('free-call');
-  document.getElementById('call-email').textContent = email;
-  document.getElementById('open-email').href = 'mailto:' + email + '?subject=' + encodeURIComponent('Free 20-minute call');
-  function open(e) { if (e) e.preventDefault(); if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); }
+  var form = document.getElementById('call-form');
+  var submit = document.getElementById('call-submit');
+  var errorBox = document.getElementById('call-error');
+  var mailLink = document.getElementById('call-email-link');
+  mailLink.textContent = email;
+  mailLink.href = 'mailto:' + email + '?subject=' + encodeURIComponent('Free 20-minute call');
+
+  // Cloudflare's bot check, loaded only when someone opens the pop-up.
+  var SITE_KEY = '0x4AAAAAAGDrKcg1ujQlsxfn';
+  var token = null, widget = null;
+  function loadBotCheck() {
+    if (widget !== null || !window.fetch) return;
+    widget = 'loading';
+    window.onCallTurnstile = function () {
+      widget = window.turnstile.render('#call-turnstile', {
+        sitekey: SITE_KEY, theme: 'auto',
+        callback: function (t) { token = t; },
+        'expired-callback': function () { token = null; },
+        'error-callback': function () { token = null; }
+      });
+    };
+    var sc = document.createElement('script');
+    sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onCallTurnstile';
+    sc.async = true;
+    document.head.appendChild(sc);
+  }
+
+  function open(e) { if (e) e.preventDefault(); loadBotCheck(); if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); }
   document.querySelectorAll('[data-open-call]').forEach(function (a) { a.addEventListener('click', open); });
   document.querySelector('[data-close-call]').addEventListener('click', function () { dlg.close(); });
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
-  var copy = document.getElementById('copy-email');
-  copy.addEventListener('click', function () {
-    function done(t) { copy.textContent = t; setTimeout(function () { copy.textContent = 'Copy'; }, 1600); }
-    if (navigator.clipboard) navigator.clipboard.writeText(email).then(function () { done('Copied'); }, function () { done('Select it'); });
+
+  function showError(msg) { errorBox.textContent = msg; errorBox.hidden = false; }
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    errorBox.hidden = true;
+    var data = { name: form.name.value.trim(), email: form.email.value.trim(), phone: form.phone.value.trim(), company: form.company.value.trim(), message: form.message.value.trim() };
+    if (!data.name) return showError('Please add your name.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) return showError('Please check your email address.');
+    if (!token) return showError('One moment: the security check is still finishing. Try again in a few seconds.');
+    data.turnstileToken = token;
+    submit.disabled = true;
+    submit.textContent = 'Sending…';
+    fetch('/api/call-request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+      .then(function (res) { return res.json().catch(function () { return {}; }).then(function (body) { return { ok: res.ok, body: body }; }); })
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.body.message || 'Something went wrong.');
+        form.hidden = true;
+        document.getElementById('call-ask').hidden = true;
+        document.getElementById('call-done').hidden = false;
+      })
+      .catch(function (err) {
+        showError((err && err.message ? err.message + ' ' : '') + 'You can also email ' + email + '.');
+        token = null;
+        if (window.turnstile && widget && widget !== 'loading') window.turnstile.reset(widget);
+      })
+      .then(function () { submit.disabled = false; submit.textContent = 'Request a call'; });
   });
 })();
 </script>

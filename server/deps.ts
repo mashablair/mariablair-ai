@@ -11,9 +11,16 @@ export type SubmitAssessmentArgs = {
   p_recommendations: { title: string; body: string }[]; p_offer_key: string; p_task_title: string
 }
 
+export type RequestCallArgs = {
+  p_contact: { first_name: string; last_name: string; email: string; phone: string; company: string }
+  p_message: string
+  p_task_title: string
+}
+
 export type RecordStripeEventArgs = { p_event_id: string; p_type: string; p_payload: unknown; p_payment: StripePayment | null }
 
 export type Deps = {
+  requestCall(env: Env, args: RequestCallArgs): Promise<{ contact_id: string; is_new_contact: boolean }>
   recordStripeEvent(env: Env, args: RecordStripeEventArgs): Promise<{ status: string }>
   verifyTurnstile(env: Env, token: string, ip: string | undefined): Promise<boolean>
   saveSubmission(env: Env, args: SubmitAssessmentArgs): Promise<SavedSubmission>
@@ -37,6 +44,12 @@ export const realDeps: Deps = {
     const { data, error } = await adminClient(env).rpc('submit_assessment', args)
     if (error) throw new Error(`submit_assessment failed: ${error.message}`)
     return data as SavedSubmission
+  },
+
+  async requestCall(env, args) {
+    const { data, error } = await adminClient(env).rpc('request_call', args)
+    if (error) throw new Error(`request_call failed: ${error.message}`)
+    return data as { contact_id: string; is_new_contact: boolean }
   },
 
   async recordStripeEvent(env, args) {

@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { handleAssessment } from './assessment'
+import { handleCallRequest } from './callRequest'
 import { realDeps, type Deps } from './deps'
 import { handleStripeWebhook } from './stripe'
 
@@ -37,6 +38,7 @@ export function createApp(deps: Deps = realDeps) {
   })
 
   app.post('/assessment', (c) => handleAssessment(c, deps))
+  app.post('/call-request', (c) => handleCallRequest(c, deps))
   app.post('/stripe/webhook', (c) => handleStripeWebhook(c, deps))
 
   app.notFound((c) => c.json({ error: 'not_found' }, 404))
