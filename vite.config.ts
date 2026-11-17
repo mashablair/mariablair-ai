@@ -15,9 +15,10 @@ function marketingPage(): Plugin {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const path = (req.url ?? '').split('?')[0] ?? ''
-        if (path === '/') {
+        const page = path === '/' ? 'index.html' : path === '/privacy' ? 'privacy.html' : null
+        if (page) {
           res.setHeader('Content-Type', 'text/html; charset=utf-8')
-          createReadStream(join(repoRoot, 'index.html')).pipe(res)
+          createReadStream(join(repoRoot, page)).pipe(res)
           return
         }
         if (path.startsWith('/images/')) {

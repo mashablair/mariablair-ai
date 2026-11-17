@@ -14,6 +14,13 @@ describe('routing config', () => {
   })
 })
 
+describe('static pages', () => {
+  it('links the privacy page from the home page footer', () => {
+    expect(readFileSync(join(root, 'index.html'), 'utf8')).toContain('href="/privacy"')
+    expect(readFileSync(join(root, 'privacy.html'), 'utf8')).toContain('<h1>Privacy policy</h1>')
+  })
+})
+
 describe('api', () => {
   it('answers the health check', async () => {
     const res = await app.request('/api/health')

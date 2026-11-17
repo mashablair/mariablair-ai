@@ -160,7 +160,7 @@ export function AssessmentPage() {
             </div>
             <Field label={COPY.contact.email}><Input type="email" required inputMode="email" autoComplete="email" value={contact.email} onChange={set('email')} /></Field>
             {track === 'business' && <Field label={COPY.contact.company}><Input autoComplete="organization" value={contact.company} onChange={set('company')} /></Field>}
-            <p className="text-sm text-muted">{COPY.contact.consent}</p>
+            <p className="text-sm text-muted">{COPY.contact.consent} <a className="underline" href="/privacy">Privacy policy</a></p>
             <Turnstile onToken={setToken} />
             {error && <Notice tone="danger">{error}</Notice>}
             <div className="flex flex-wrap-reverse gap-2 justify-between">
