@@ -21,6 +21,33 @@ describe('static pages', () => {
   })
 })
 
+describe('search and AI crawlers', () => {
+  const read = (f: string) => readFileSync(join(root, f), 'utf8')
+  it('has robots rules that keep private areas out and point to the sitemap', () => {
+    const robots = read('robots.txt')
+    for (const path of ['/admin', '/portal', '/login', '/demo', '/api/']) expect(robots).toContain(`Disallow: ${path}`)
+    expect(robots).not.toMatch(/Disallow: \/\s*$/m)
+    expect(robots).toContain('Sitemap: https://mariablairai.com/sitemap.xml')
+  })
+  it('lists only public pages in the sitemap', () => {
+    const locs = [...read('sitemap.xml').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1])
+    expect(locs).toEqual(['https://mariablairai.com/', 'https://mariablairai.com/privacy'])
+  })
+  it('has valid structured data whose FAQ matches the visible FAQ', () => {
+    const html = read('index.html')
+    const json = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)![1]!)
+    const faq = json['@graph'].find((n: { '@type': string }) => n['@type'] === 'FAQPage')
+    expect(faq.mainEntity.length).toBeGreaterThan(3)
+    for (const q of faq.mainEntity) {
+      expect(html).toContain(q.name)
+      expect(html).toContain(q.acceptedAnswer.text)
+    }
+  })
+  it('keeps the 404 page out of search results', () => {
+    expect(read('404.html')).toContain('<meta name="robots" content="noindex">')
+  })
+})
+
 describe('api', () => {
   it('answers the health check', async () => {
     const res = await app.request('/api/health')

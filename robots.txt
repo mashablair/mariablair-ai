@@ -1,0 +1,12 @@
+# mariablairai.com
+# Search engines and AI assistants are welcome to read the public pages.
+# The app areas below are private or have nothing useful to index.
+User-agent: *
+Disallow: /admin
+Disallow: /portal
+Disallow: /login
+Disallow: /demo
+Disallow: /api/
+Disallow: /app/
+
+Sitemap: https://mariablairai.com/sitemap.xml

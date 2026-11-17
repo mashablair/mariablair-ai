@@ -4,12 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>body{margin:0}</style>
-<title>Maria Blair AI Consulting</title>
+<title>Maria Blair AI Consulting · AI Training for Boca Raton Businesses</title>
+<link rel="canonical" href="https://mariablairai.com/">
 <meta name="description" content="Private, in-person AI training and setup for businesses in Boca Raton, Delray Beach and Palm Beach County. Maria Blair comes to your office and puts AI to work on your team's real tasks.">
 <meta property="og:title" content="Maria Blair, AI Consulting">
 <meta property="og:description" content="Thoughtful AI for the businesses of Boca Raton. In-person training and setup for owners and their teams.">
 <meta property="og:image" content="https://mariablairai.com/images/maria-headshot.jpg">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://mariablairai.com/">
+<meta property="og:site_name" content="Maria Blair, AI Consulting">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
 <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
@@ -21,14 +25,182 @@
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "ProfessionalService",
-  "name": "Maria Blair, AI Consulting",
-  "url": "https://mariablairai.com",
-  "image": "https://mariablairai.com/images/maria-headshot.jpg",
-  "description": "Private, in-person AI training and setup for small businesses in Boca Raton, Delray Beach and Palm Beach County, Florida.",
-  "areaServed": ["Boca Raton, FL", "Delray Beach, FL", "Palm Beach County, FL"],
-  "address": { "@type": "PostalAddress", "addressLocality": "Boca Raton", "addressRegion": "FL", "addressCountry": "US" },
-  "founder": { "@type": "Person", "name": "Maria Blair", "jobTitle": "AI Consultant" }
+  "@graph": [
+    {
+      "@type": "ProfessionalService",
+      "@id": "https://mariablairai.com/#business",
+      "name": "Maria Blair, AI Consulting",
+      "url": "https://mariablairai.com/",
+      "logo": "https://mariablairai.com/images/apple-touch-icon.png",
+      "image": "https://mariablairai.com/images/maria-headshot.jpg",
+      "description": "Private, in-person AI training and setup for small businesses in Boca Raton, Delray Beach and Palm Beach County, Florida.",
+      "areaServed": [
+        {
+          "@type": "City",
+          "name": "Boca Raton, FL"
+        },
+        {
+          "@type": "City",
+          "name": "Delray Beach, FL"
+        },
+        {
+          "@type": "City",
+          "name": "West Palm Beach, FL"
+        },
+        {
+          "@type": "AdministrativeArea",
+          "name": "Palm Beach County, FL"
+        }
+      ],
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Boca Raton",
+        "addressRegion": "FL",
+        "addressCountry": "US"
+      },
+      "priceRange": "$99 per hour",
+      "knowsAbout": [
+        "AI training",
+        "ChatGPT",
+        "Claude",
+        "AI receptionist",
+        "Business automation",
+        "Google Workspace",
+        "Microsoft 365",
+        "Property management software"
+      ],
+      "founder": {
+        "@id": "https://mariablairai.com/#maria"
+      },
+      "sameAs": [
+        "https://youtube.com/@mariatalkstech"
+      ],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "AI services",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "name": "AI Training Session",
+            "price": "99",
+            "priceCurrency": "USD",
+            "url": "https://buy.stripe.com/7sY3cn5jKflV2NN8fm6sw04",
+            "priceSpecification": {
+              "@type": "UnitPriceSpecification",
+              "price": "99",
+              "priceCurrency": "USD",
+              "unitText": "hour"
+            },
+            "itemOffered": {
+              "@type": "Service",
+              "name": "AI Team Training",
+              "description": "Hands-on training at your office, on your team's own daily tasks."
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "AI Implementation Sprint",
+              "description": "Finding your biggest time-wasters and building the fixes together: a shared AI business brain, templates for repeat work, and AI connected to your email, calendar and files."
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "AI Receptionist & Website Chat",
+              "description": "An always-on assistant for your phone and website that answers routine questions, books appointments and captures leads."
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Ongoing Support",
+              "description": "A monthly check-in to add new workflows, answer questions and keep your team current."
+            }
+          },
+          {
+            "@type": "Offer",
+            "name": "Free 20-minute call",
+            "price": "0",
+            "priceCurrency": "USD",
+            "url": "https://mariablairai.com/#free-call"
+          }
+        ]
+      }
+    },
+    {
+      "@type": "Person",
+      "@id": "https://mariablairai.com/#maria",
+      "name": "Maria Blair",
+      "jobTitle": "AI Consultant",
+      "image": "https://mariablairai.com/images/maria-headshot.jpg",
+      "worksFor": {
+        "@id": "https://mariablairai.com/#business"
+      },
+      "sameAs": [
+        "https://youtube.com/@mariatalkstech"
+      ],
+      "description": "Senior software engineer with more than 11 years of experience, former Yardi engineer, and creator of the YouTube channel Maria Talks Tech."
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://mariablairai.com/#website",
+      "url": "https://mariablairai.com/",
+      "name": "Maria Blair, AI Consulting",
+      "publisher": {
+        "@id": "https://mariablairai.com/#business"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://mariablairai.com/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Does my team need to be good with technology?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. If they can write an email, they can use AI. I teach to the least techy person in the room."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is our information safe?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "I set you up on business-grade plans and show your team exactly what the tools can see, what they keep, and what never to paste in."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can AI answer our phones or website chat?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. An AI receptionist can pick up every call, day or night, answer routine questions and book appointments. You decide what it handles and when it passes a caller to your team."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which AI tools do you use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Mostly Claude and ChatGPT, connected to Google Workspace or Microsoft 365. I recommend what fits your business and the tools you already pay for."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where do you work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In person across Boca Raton, Delray Beach and Palm Beach County, and remotely anywhere."
+          }
+        }
+      ]
+    }
+  ]
 }
 </script>
 
