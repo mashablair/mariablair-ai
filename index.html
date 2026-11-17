@@ -270,6 +270,17 @@ button.btn { font-family: var(--body); cursor: pointer; }
 .call-form .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
 .call-form .error { color: #A23B2D; font-size: 15px; }
 :root[data-theme="dark"] .call-form .error { color: #F0A093; }
+.call-dialog [hidden] { display: none !important; }
+.call-done { display: grid; gap: 18px; justify-items: start; }
+.call-done .check {
+  width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--sand); border: 1px solid var(--line); color: var(--brass);
+}
+.call-done h2:focus { outline: none; }
+.call-done .next { border-top: 1px solid var(--line); padding-top: 18px; display: grid; gap: 8px; width: 100%; }
+.call-done .next ol { margin: 0; padding-left: 20px; color: var(--muted); display: grid; gap: 6px; }
+.call-done .actions { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+.call-done .actions button.btn { cursor: pointer; font-family: var(--body); }
 .call-dialog .small { font-size: 15px; }
 .call-dialog .small a { color: var(--ink); }
 .price-note { font-size: 15px; color: var(--on-deep-muted); }
@@ -463,10 +474,10 @@ button.btn { font-family: var(--body); cursor: pointer; }
 <dialog class="call-dialog" id="free-call" aria-labelledby="free-call-title">
   <div class="inner">
     <button type="button" class="close" data-close-call aria-label="Close">×</button>
-    <p class="label">Free 20-minute call</p>
-    <h2 id="free-call-title">Let's find a time to talk.</h2>
     <div id="call-ask">
-      <p>Tell me a little about you and what's taking up your team's time. I'll reply within one business day to set up a call.</p>
+      <p class="label">Free 20-minute call</p>
+      <h2 id="free-call-title">Let's find a time to talk.</h2>
+      <p style="margin-top:18px">Tell me a little about you and what's taking up your team's time. I'll reply within one business day to set up a call.</p>
     </div>
     <form class="call-form" id="call-form" novalidate>
       <div class="row">
@@ -481,11 +492,28 @@ button.btn { font-family: var(--body); cursor: pointer; }
       <div id="call-turnstile"></div>
       <p class="error" id="call-error" role="alert" hidden></p>
       <button type="submit" class="btn" id="call-submit">Request a call</button>
-      <p class="small">Prefer email? Write to <a id="call-email-link" href="#">my email</a>.</p>
+      <p class="small">Prefer email? Write to <a class="call-email-link" href="#">my email</a>.</p>
     </form>
-    <div id="call-done" hidden>
-      <p>Thank you. Your request is in, and a confirmation is on its way to your inbox. I'll reply within one business day.</p>
-      <p class="small">While you wait, the <a href="/assessment">free 3-minute AI assessment</a> gives us a head start on the call.</p>
+    <div class="call-done" id="call-done" hidden>
+      <div class="check" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      </div>
+      <p class="label">Request received</p>
+      <h2 id="call-done-title" tabindex="-1">Thank you, <span id="call-done-name">friend</span>.</h2>
+      <p>Your request for a free 20-minute call is in. I sent a confirmation to <b id="call-done-email" style="color:var(--ink);font-weight:500"></b>.</p>
+      <div class="next">
+        <p class="label">What happens next</p>
+        <ol>
+          <li>I'll read your note and reply within one business day.</li>
+          <li>We pick a time that suits you, by email or phone.</li>
+          <li>We talk for 20 minutes about where AI can help. No cost, no pressure.</li>
+        </ol>
+      </div>
+      <p class="small">No confirmation email? Check your spam folder, or write to <a class="call-email-link" href="#">my email</a>.</p>
+      <div class="actions">
+        <button type="button" class="btn" data-close-call>Done</button>
+        <a href="/assessment">Take the 3-minute AI assessment while you wait</a>
+      </div>
     </div>
   </div>
 </dialog>
@@ -518,9 +546,12 @@ button.btn { font-family: var(--body); cursor: pointer; }
   var form = document.getElementById('call-form');
   var submit = document.getElementById('call-submit');
   var errorBox = document.getElementById('call-error');
-  var mailLink = document.getElementById('call-email-link');
-  mailLink.textContent = email;
-  mailLink.href = 'mailto:' + email + '?subject=' + encodeURIComponent('Free 20-minute call');
+  var ask = document.getElementById('call-ask');
+  var done = document.getElementById('call-done');
+  document.querySelectorAll('.call-email-link').forEach(function (a) {
+    a.textContent = email;
+    a.href = 'mailto:' + email + '?subject=' + encodeURIComponent('Free 20-minute call');
+  });
 
   // Cloudflare's bot check, loaded only when someone opens the pop-up.
   var SITE_KEY = '0x4AAAAAAGDrKcg1ujQlsxfn';
@@ -544,8 +575,26 @@ button.btn { font-family: var(--body); cursor: pointer; }
 
   function open(e) { if (e) e.preventDefault(); loadBotCheck(); if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); }
   document.querySelectorAll('[data-open-call]').forEach(function (a) { a.addEventListener('click', open); });
-  document.querySelector('[data-close-call]').addEventListener('click', function () { dlg.close(); });
+  document.querySelectorAll('[data-close-call]').forEach(function (b) { b.addEventListener('click', function () { dlg.close(); }); });
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+
+  function showForm() {
+    form.reset();
+    ask.hidden = false; form.hidden = false; done.hidden = true;
+    dlg.setAttribute('aria-labelledby', 'free-call-title');
+    token = null;
+    if (window.turnstile && widget && widget !== 'loading') window.turnstile.reset(widget);
+  }
+  function showDone(name, address) {
+    document.getElementById('call-done-name').textContent = name.split(/\s+/)[0];
+    document.getElementById('call-done-email').textContent = address;
+    ask.hidden = true; form.hidden = true; done.hidden = false;
+    dlg.setAttribute('aria-labelledby', 'call-done-title');
+    dlg.scrollTop = 0;
+    document.getElementById('call-done-title').focus();
+  }
+  // After a request is sent, closing the pop-up resets it, so a second visit starts fresh.
+  dlg.addEventListener('close', function () { if (!done.hidden) showForm(); });
 
   function showError(msg) { errorBox.textContent = msg; errorBox.hidden = false; }
   form.addEventListener('submit', function (e) {
@@ -562,9 +611,7 @@ button.btn { font-family: var(--body); cursor: pointer; }
       .then(function (res) { return res.json().catch(function () { return {}; }).then(function (body) { return { ok: res.ok, body: body }; }); })
       .then(function (r) {
         if (!r.ok) throw new Error(r.body.message || 'Something went wrong.');
-        form.hidden = true;
-        document.getElementById('call-ask').hidden = true;
-        document.getElementById('call-done').hidden = false;
+        showDone(data.name, data.email.toLowerCase());
       })
       .catch(function (err) {
         showError((err && err.message ? err.message + ' ' : '') + 'You can also email ' + email + '.');
