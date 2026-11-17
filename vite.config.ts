@@ -21,10 +21,15 @@ function marketingPage(): Plugin {
           createReadStream(join(repoRoot, page)).pipe(res)
           return
         }
+        if (path === '/favicon.ico') {
+          res.setHeader('Content-Type', 'image/x-icon')
+          createReadStream(join(repoRoot, 'favicon.ico')).pipe(res)
+          return
+        }
         if (path.startsWith('/images/')) {
           const file = normalize(join(repoRoot, decodeURIComponent(path)))
           if (file.startsWith(join(repoRoot, 'images')) && existsSync(file) && statSync(file).isFile()) {
-            res.setHeader('Content-Type', 'image/jpeg')
+            res.setHeader('Content-Type', file.endsWith('.png') ? 'image/png' : 'image/jpeg')
             createReadStream(file).pipe(res)
             return
           }

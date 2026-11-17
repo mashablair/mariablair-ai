@@ -11,6 +11,7 @@ if (!existsSync(join(dist, 'app', 'index.html'))) throw new Error('Run vite buil
 
 copyFileSync(join(root, 'index.html'), join(dist, 'index.html'))
 copyFileSync(join(root, 'privacy.html'), join(dist, 'privacy.html'))
+copyFileSync(join(root, 'favicon.ico'), join(dist, 'favicon.ico'))
 cpSync(join(root, 'images'), join(dist, 'images'), { recursive: true })
 copyFileSync(join(root, 'scripts', '_redirects'), join(dist, '_redirects'))
 
