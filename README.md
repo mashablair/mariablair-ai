@@ -6,6 +6,10 @@ A React and TypeScript platform for running an independent AI consulting busines
 
 **React · TypeScript · TanStack Query · Supabase · Hono · Cloudflare Pages**
 
+![Sample-data CRM dashboard showing the consultant’s follow-up queue and open tasks](docs/screenshots/crm-demo-today.jpg)
+
+*Consultant view in the public demo. All names and records shown are fictional.*
+
 ## The product
 
 Consulting work creates a connected set of records: a person, their business, what they need help with, what was promised, what happens next, and what the client should be able to see. This project brings those workflows into one application while keeping internal working notes separate from client-facing content.
