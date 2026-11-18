@@ -6,9 +6,11 @@ A React and TypeScript platform for running an independent AI consulting busines
 
 **React · TypeScript · TanStack Query · Supabase · Hono · Cloudflare Pages**
 
-![Sample-data CRM dashboard showing the consultant’s follow-up queue and open tasks](docs/screenshots/crm-demo-today.jpg)
+| Marketing landing page | Consultant dashboard |
+| --- | --- |
+| [![Maria Blair AI marketing landing page introducing private AI training and consulting](docs/screenshots/marketing-homepage.jpg)](docs/screenshots/marketing-homepage.jpg) | [![Sample-data CRM dashboard showing the consultant’s follow-up queue and open tasks](docs/screenshots/crm-demo-today.jpg)](docs/screenshots/crm-demo-today.jpg) |
 
-*Consultant view in the public demo. All names and records shown are fictional.*
+*The live marketing website and the public CRM demo. All dashboard names and records are fictional. Click either screenshot to view it at full size.*
 
 Built by **[Maria Blair](https://github.com/mashablair)** for her AI consulting practice. This project brings together product design, React application architecture, shared TypeScript domain rules, and client-facing workflows.
 
