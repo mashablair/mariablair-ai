@@ -10,6 +10,8 @@ A React and TypeScript platform for running an independent AI consulting busines
 
 *Consultant view in the public demo. All names and records shown are fictional.*
 
+Built by **[Maria Blair](https://github.com/mashablair)** for her AI consulting practice. This project brings together product design, React application architecture, shared TypeScript domain rules, and client-facing workflows.
+
 ## The product
 
 Consulting work creates a connected set of records: a person, their business, what they need help with, what was promised, what happens next, and what the client should be able to see. This project brings those workflows into one application while keeping internal working notes separate from client-facing content.
@@ -38,8 +40,6 @@ Use fictional information when exploring the demo. Real clients sign in through 
 | Billing | Tracks charges, payments, balances, product access, and Stripe payments that need manual matching. |
 | Client portal | Shows the signed-in client's assessment history, shared recommendations, materials, session summaries, and products. |
 | Free-call intake | Creates or updates a contact, records the visitor's message, creates a follow-up task, and sends confirmation and notification emails when services are configured. |
-
-Google Sheets synchronization is **not part of the current main-branch application**. The CSV importer and the sample-data demo should not be confused with a live two-way sync.
 
 ## Engineering highlights
 
@@ -122,7 +122,7 @@ npm run build
 
 The suite includes assessment scoring and validation, CSV parsing, repository behavior, billing logic, API request handling, Stripe signatures, and database access rules using PGlite. The database tests exercise verified-email account linking, client isolation, and denial of access to internal records. Build tests check that the marketing page is preserved.
 
-These checks describe the repository's test coverage, not a claim that every production integration or deployment has been independently audited.
+See [verification notes](docs/PORTFOLIO_CHECK.md) for the latest portfolio review and the scope of live checks.
 
 ## Security model
 
