@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { planSync, resolveSync, type SyncChoice, type SyncInput, type SyncPlan, type SyncRecord } from '@shared/sheetsSync'
 import { useAuth } from '@/auth/AuthProvider'
 import { IS_DEMO } from '@/lib/mode'
-import { Button, Card, Field, Input, Notice, PageHeader, Select } from '@/ui/kit'
+import { Button, Card, Field, Input, LinkButton, Notice, PageHeader, Select } from '@/ui/kit'
 
 const person = (action: string, source = 'Networking event'): SyncRecord => ({ kind: 'contacts', id: 'DEMO-C001', fields: { name: 'Alex Example', source, next_action: action, follow_up_date: '2026-12-01' } })
 const task = (title: string): SyncRecord => ({ kind: 'tasks', id: 'DEMO-F001', fields: { title, contact_id: 'DEMO-C001', due_date: '2026-12-02', status: 'open' } })
@@ -198,7 +198,7 @@ function LiveSync() {
 
 export function SheetsSyncPage() {
   return <>
-    <PageHeader label="Admin tools" title="Google Sheet sync" />
+    <PageHeader label="Admin tools" title="Google Sheet sync" actions={!IS_DEMO && <LinkButton to="/admin/sync/import" variant="outline">Import Sheet exports</LinkButton>} />
     <p className="text-muted max-w-3xl mb-5">Review supported changes between Contacts and Follow-ups in your app and Google Sheet.</p>
     {IS_DEMO ? <SyncSandbox /> : <LiveSync />}
   </>
