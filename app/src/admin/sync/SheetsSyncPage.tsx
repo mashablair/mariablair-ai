@@ -171,7 +171,7 @@ function LiveSync() {
     {preview && <Card>
       <h2 className="text-2xl mb-3">Review linked records</h2>
       {preview.coverage && <div className="mb-4 text-sm text-muted">
-        <p>{preview.coverage.linked} linked · {preview.coverage.unlinkedSheet} unlinked in Sheet · {preview.coverage.unlinkedApp} unlinked in app. Unlinked records are not synced.</p>
+        <p>{preview.coverage.linked} linked · {preview.coverage.unlinkedSheet} unlinked in Sheet · {preview.coverage.unlinkedApp} unlinked in app. Unlinked records are not synced. Rows populated only in omitted columns are outside this count.</p>
         {preview.coverage.unmappedColumns.map(tab => tab.columns.length > 0 && <p key={tab.tab}>{tab.tab} left unchanged: {tab.columns.join(', ')}.</p>)}
       </div>}
       {preview.plan.changes.length === 0 && <p>No differences in supported fields.</p>}
@@ -198,8 +198,8 @@ function LiveSync() {
 
 export function SheetsSyncPage() {
   return <>
-    <PageHeader label="Admin tools" title="Google Sheet sync" actions={!IS_DEMO && <LinkButton to="/admin/sync/import" variant="outline">Import Sheet exports</LinkButton>} />
-    <p className="text-muted max-w-3xl mb-5">Review supported changes between Contacts and Follow-ups in your app and Google Sheet.</p>
+    <PageHeader label="Admin tools" title="Review linked Sheet edits" actions={!IS_DEMO && <LinkButton to="/admin/sync/import" variant="outline">Sync from Google Sheet</LinkButton>} />
+    <p className="text-muted max-w-3xl mb-5">Step 2: review supported edits to already-linked Contacts and Follow-ups. Keep workbook structure unchanged during preview and confirmation. Use Sync from Google Sheet for step 1 to preview and create new records; each step needs separate confirmation.</p>
     {IS_DEMO ? <SyncSandbox /> : <LiveSync />}
   </>
 }

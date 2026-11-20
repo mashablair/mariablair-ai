@@ -38,8 +38,11 @@ export function projectGoogleSync(snapshot: GoogleSheetsSyncSnapshot, links: Syn
       const cell = (column: number) => row.cells.find(c => c.column === column)
       const id = plain(cell(identity))
       if (!id) {
-        // Count populated rows missing an ID, but do not derive or assign one.
-        if (row.cells.some(c => c.value !== null || c.formula)) unlinkedSheet++
+        // Count only rows populated in requested identity/mapped columns. Rows
+        // populated exclusively in omitted columns are not requested or counted.
+        const requestedColumns = [identity, taskContact, ...map.map(([, col]) => col)]
+        if (row.cells.some(c => requestedColumns.includes(c.column)
+          && (c.value !== null || c.formula || c.derived || c.hasRichContent))) unlinkedSheet++
         continue
       }
       if (seen.has(id) || id !== id.trim() || id.length > 100 || /[:\x00-\x1f]/.test(id)) throw bad()

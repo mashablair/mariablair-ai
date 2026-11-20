@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createApp } from '../server/app'
+import { parseSheetsBootstrap } from '../shared/sheetsBootstrapCsv'
 import { bootstrapEnabled, type BootstrapDeps } from '../server/sync/bootstrapRoutes'
 
 const previewId = '00000000-0000-4000-8000-000000000001'
@@ -37,7 +38,7 @@ describe('first CSV import API boundaries', () => {
   it('does no import IO if disabled, even for a signed-in admin with a valid request', async () => {
     const { request, rpc } = setup(false)
     const status = await request('status', 'admin')
-    expect(await status.json()).toEqual({ enabled: false })
+    expect(await status.json()).toEqual({ enabled: false, googleEnabled: false })
     expect(status.headers.get('Cache-Control')).toBe('no-store')
     expect((await request('preview', 'admin', { contacts, tasks })).status).toBe(503)
     expect((await request('apply', 'admin', { id: previewId })).status).toBe(503)
@@ -57,6 +58,15 @@ describe('first CSV import API boundaries', () => {
     expect(rpc).toHaveBeenCalledWith(baseEnv, 'preview', owner, { id: expect.stringMatching(/^[a-f0-9-]{36}$/), contacts, tasks })
     expect((await request('apply', 'admin', { id: previewId })).status).toBe(200)
     expect(rpc).toHaveBeenCalledWith(baseEnv, 'apply', owner, { id: previewId })
+  })
+  it('preserves legacy CSV tasks with distinct IDs/due dates and the same normalized Action', async () => {
+    const { request, rpc } = setup()
+    const recurringTasks = parseSheetsBootstrap(
+      'Contact ID,Name,First Met / How,Next Action,Follow-up Due\nC-A,Fictional Person,Test workshop,Review draft,',
+      'Task ID,Contact ID,Action,Due Date\nT-A,C-A,Fictional follow-up,2026-12-01\nT-B,C-A,  FICTIONAL   follow-up ,2026-12-08',
+    ).tasks
+    expect((await request('preview', 'admin', { contacts, tasks: recurringTasks })).status).toBe(200)
+    expect(rpc).toHaveBeenCalledWith(baseEnv, 'preview', owner, expect.objectContaining({ contacts, tasks: recurringTasks }))
   })
   it('rejects private fields, arbitrary destinations and payload substitution', async () => {
     const { request, rpc } = setup()

@@ -55,6 +55,11 @@ export function createGoogleSheetsSyncReader(config: {
   spreadsheetId: string
   getAccessToken: () => Promise<string>
   fetch?: typeof fetch
+  /** Select ranges from observed headers and verify them in the data response.
+   * A concurrent column move can bring unintended values into transit; discard
+   * the whole response on header drift. Keep workbook structure fixed during use.
+   */
+  columns?: Record<SyncSheetTitle, readonly string[]>
 }): { read: () => Promise<GoogleSheetsSyncSnapshot> } {
   if (!/^[A-Za-z0-9_-]{10,200}$/.test(config.spreadsheetId)) fail('configuration')
   const spreadsheetId = config.spreadsheetId
@@ -75,8 +80,20 @@ export function createGoogleSheetsSyncReader(config: {
       // response text (which may contain cells or credentials) in thrown errors.
       const declared = result.headers.get('content-length')
       if (declared && Number(declared) > 8_000_000) return fail('invalid_response')
-      const body = await result.text()
-      if (body.length > 8_000_000) return fail('invalid_response')
+      const reader = result.body?.getReader()
+      if (!reader) return fail('invalid_response')
+      let body = '', size = 0
+      const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: false })
+      try {
+        while (true) {
+          const chunk = await reader.read()
+          if (chunk.done) break
+          size += chunk.value.byteLength
+          if (size > 8_000_000) { await reader.cancel(); return fail('invalid_response') }
+          body += decoder.decode(chunk.value, { stream: true })
+        }
+        body += decoder.decode()
+      } finally { reader.releaseLock() }
       let parsed: z.infer<typeof response>
       try { parsed = response.parse(JSON.parse(body)) } catch { return fail('invalid_response') }
       if (parsed.spreadsheetId !== spreadsheetId) return fail('invalid_response')
@@ -98,7 +115,34 @@ export function createGoogleSheetsSyncReader(config: {
     })
     if (tabs[0]!.sheetId === tabs[1]!.sheetId) return fail('invalid_response')
     const params = new URLSearchParams({ fields: 'spreadsheetId,sheets(properties(sheetId,title,sheetType,gridProperties(rowCount,columnCount)),data(startRow,startColumn,rowData(values(userEnteredValue,effectiveValue,formattedValue,hyperlink,chipRuns,textFormatRuns,effectiveFormat(numberFormat(type))))))' })
-    for (const p of tabs) params.append('ranges', `'${p.title}'!A1:${String.fromCharCode(64 + p.gridProperties.columnCount)}${p.gridProperties.rowCount}`)
+    let selectedHeaders: Map<string, string[]> | undefined
+    if (config.columns) {
+      const headerParams = new URLSearchParams({ fields: params.get('fields')! })
+      for (const p of tabs) headerParams.append('ranges', `'${p.title}'!A1:${String.fromCharCode(64 + p.gridProperties.columnCount)}1`)
+      const headerData = await request(headerParams)
+      selectedHeaders = new Map()
+      for (const p of tabs) {
+        const matches = headerData.sheets.filter(s => s.properties.sheetId === p.sheetId && s.properties.title === p.title)
+        const g = matches[0]?.data
+        if (matches.length !== 1 || g?.length !== 1 || (g[0]!.startRow ?? 0) !== 0 || (g[0]!.startColumn ?? 0) !== 0
+          || g[0]!.rowData?.length !== 1) return fail('invalid_response')
+        const headers = (g[0]!.rowData[0]!.values ?? []).map(v => {
+          if (v.userEnteredValue?.formulaValue || v.effectiveValue?.formulaValue) return fail('unsupported_sheet')
+          const value = valueOf(v.effectiveValue ?? v.userEnteredValue)
+          if (value !== null && typeof value !== 'string') return fail('unsupported_sheet')
+          return typeof value === 'string' ? value.trim() : ''
+        })
+        if (headers.length > p.gridProperties.columnCount || new Set(headers.filter(Boolean)).size !== headers.filter(Boolean).length) return fail('unsupported_sheet')
+        selectedHeaders.set(p.title, headers)
+        for (const name of config.columns[p.title as SyncSheetTitle]) {
+          const index = headers.indexOf(name)
+          if (index < 0) return fail('unsupported_sheet')
+          const col = String.fromCharCode(65 + index)
+          params.append('ranges', `'${p.title}'!${col}1:${col}${p.gridProperties.rowCount}`)
+        }
+      }
+    }
+    if (!config.columns) for (const p of tabs) params.append('ranges', `'${p.title}'!A1:${String.fromCharCode(64 + p.gridProperties.columnCount)}${p.gridProperties.rowCount}`)
     const data = await request(params)
     if (data.sheets.length !== 2) return fail('invalid_response')
     return { spreadsheetId, tabs: tabs.map((expected) => {
@@ -106,6 +150,29 @@ export function createGoogleSheetsSyncReader(config: {
       if (matches.length !== 1) return fail('invalid_response')
       const got = matches[0]!
       if (got.properties.gridProperties.rowCount !== expected.gridProperties.rowCount || got.properties.gridProperties.columnCount !== expected.gridProperties.columnCount) return fail('invalid_response')
+      if (selectedHeaders) {
+        const headers = selectedHeaders.get(expected.title)!
+        const wanted = config.columns![expected.title as SyncSheetTitle].map(h => headers.indexOf(h))
+        if (got.data?.length !== wanted.length) return fail('invalid_response')
+        const rows: { values: z.infer<typeof cell>[] }[] = []
+        const seen = new Set<number>()
+        for (const part of got.data) {
+          const col = part.startColumn ?? 0
+          if (!wanted.includes(col) || seen.has(col) || (part.startRow ?? 0) !== 0 || !part.rowData?.length
+            || part.rowData.length > expected.gridProperties.rowCount) return fail('invalid_response')
+          seen.add(col)
+          const header = part.rowData[0]?.values?.[0]
+          if (header?.userEnteredValue?.formulaValue || valueOf(header?.effectiveValue ?? header?.userEnteredValue) !== headers[col]) return fail('unsupported_sheet')
+          part.rowData.forEach((row, index) => {
+            if ((row.values?.length ?? 0) > 1) return fail('invalid_response')
+            rows[index] ??= { values: [] }
+            rows[index]!.values[col] = row.values?.[0] ?? {}
+          })
+        }
+        // After verifying requested headers, retain omitted names for disclosure, not cell contents.
+        rows[0] = { values: headers.map(stringValue => ({ userEnteredValue: { stringValue } })) }
+        got.data = [{ rowData: rows }]
+      }
       if (got.data?.length !== 1) return fail('invalid_response')
       const g = got.data[0]!
       if ((g.startRow ?? 0) !== 0 || (g.startColumn ?? 0) !== 0) return fail('invalid_response')

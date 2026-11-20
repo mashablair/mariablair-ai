@@ -5,6 +5,7 @@ import { createGoogleSheetsSyncReader, type GoogleSheetsSyncSnapshot } from '../
 import { SyncCoordinator, type SyncCoverage, type SyncPreview, type SyncReceipt, type SyncStore } from './coordinator'
 import { createGoogleReadToken } from './googleAuth'
 import { projectGoogleSync, type SyncLink } from './sheetProjection'
+import { GOOGLE_LINKED_READ_COLUMNS } from './sheetMappingGuard'
 
 export type ProductionSyncMode = 'off' | 'preview' | 'sheet_to_app'
 const dbError = () => new Error('Sync storage unavailable.')
@@ -78,7 +79,7 @@ export function productionCoordinator(env: Env): SyncCoordinator | null {
   try {
     const getAccessToken = createGoogleReadToken({ account: env.CRM_SHEETS_SYNC_ACCOUNT!, privateKey: env.CRM_SHEETS_SYNC_KEY! })
     const spreadsheetId = env.CRM_SHEETS_SYNC_ID!
-    const reader = createGoogleSheetsSyncReader({ spreadsheetId, getAccessToken })
+    const reader = createGoogleSheetsSyncReader({ spreadsheetId, getAccessToken, columns: GOOGLE_LINKED_READ_COLUMNS })
     const db = adminClient(env)
     let key: Promise<string> | undefined
     const rpc: Rpc = async (action, args = {}) => {

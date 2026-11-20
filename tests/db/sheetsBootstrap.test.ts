@@ -80,6 +80,16 @@ describe('CSV bootstrap service RPC', () => {
       .toEqual([{input:null,expected_plan:null,result}])
   })
 
+  it('retains CSV creation of distinct task IDs/dates with the same normalized Action', async () => {
+    const recurring = { ...input, tasks: [{ ...task, due_date: '2026-12-01' },
+      { ...task, id: 'T-2', title: '  SYNTHETIC   task ', due_date: '2026-12-08' }] }
+    expect(await rpc('preview', recurring)).toMatchObject({ canApply: true })
+    expect(await apply()).toMatchObject({ contactsCreated: 1, tasksCreated: 2 })
+    expect((await db.query("select to_char(due_date,'YYYY-MM-DD') as due_date from public.tasks order by due_date")).rows)
+      .toEqual([{ due_date: '2026-12-01' }, { due_date: '2026-12-08' }])
+    expect(await counts()).toEqual({ contacts: 1, tasks: 2, links: 3 })
+  })
+
   it('rolls back contact and links if follow-up insertion fails and can retry the untouched preview', async () => {
     await preview()
     await db.exec(`

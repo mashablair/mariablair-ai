@@ -7,6 +7,11 @@ export const GOOGLE_SYNC_FIELD_HEADERS = {
   contacts: { source: 'First Met / How', next_action: 'Next Action', follow_up_date: 'Follow-up Due' },
   tasks: { title: 'Action', due_date: 'Due Date' },
 } as const
+// Linked updates need only identities/association and mapped fields, not Name or notes.
+export const GOOGLE_LINKED_READ_COLUMNS: Record<SyncSheetTitle, readonly string[]> = {
+  Contacts: ['Contact ID', ...Object.values(GOOGLE_SYNC_FIELD_HEADERS.contacts)],
+  'Follow-ups': ['Task ID', 'Contact ID', ...Object.values(GOOGLE_SYNC_FIELD_HEADERS.tasks)],
+}
 const ALLOWED_COLUMNS: Record<SyncSheetTitle, readonly string[]> = {
   Contacts: Object.values(GOOGLE_SYNC_FIELD_HEADERS.contacts),
   'Follow-ups': Object.values(GOOGLE_SYNC_FIELD_HEADERS.tasks),
