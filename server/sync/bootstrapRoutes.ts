@@ -63,8 +63,11 @@ export const previewSchema = z.object({
   const ids = new Set(contacts.map(contact => contact.id))
   return contacts.length + tasks.length <= 200 && ids.size === contacts.length
     && new Set(tasks.map(t => t.id)).size === tasks.length
-    && new Set(tasks.map(t => JSON.stringify([t.contact_id, t.title.trim().replace(/\s+/g, ' ').toLowerCase()]))).size === tasks.length && tasks.every(t => ids.has(t.contact_id))
+    && tasks.every(t => ids.has(t.contact_id))
 })
+// Keep legacy CSV acceptance unchanged; this extra ambiguity guard is Google-only.
+const googlePreviewSchema = previewSchema.refine(({ tasks }) =>
+  new Set(tasks.map(t => JSON.stringify([t.contact_id, t.title.trim().replace(/\s+/g, ' ').toLowerCase()]))).size === tasks.length)
 const applySchema = z.object({ id: z.uuid() }).strict()
 const disposition = z.enum(['create', 'linked', 'blocked'])
 const googlePlanSchema = z.object({ canApply: z.boolean(), contacts: z.array(z.object({ id, name, disposition })),
@@ -110,7 +113,7 @@ export function bootstrapRoutes(deps: BootstrapDeps = realBootstrapDeps) {
     if (!z.object({}).strict().safeParse(await boundedJson(c.req.raw)).success) return c.json({ error: 'invalid_import' }, 400)
     try {
       const source = await deps.readGoogle(c.env)
-      const parsed = previewSchema.safeParse({ contacts: source.contacts, tasks: source.tasks })
+      const parsed = googlePreviewSchema.safeParse({ contacts: source.contacts, tasks: source.tasks })
       if (!parsed.success) return c.json({ error: 'invalid_google_import' }, 409)
       const id = crypto.randomUUID()
       const reply = await deps.rpc(c.env, 'preview', c.get('bootstrapAdmin'), { id, ...parsed.data })

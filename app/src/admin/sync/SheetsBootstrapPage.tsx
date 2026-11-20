@@ -107,7 +107,7 @@ function LiveBootstrap() {
     {enabled === null && !error && <p role="status">Checking import setup…</p>}
     <Card className="grid gap-3">
       <h2 className="text-2xl">1. New records from Google Sheet</h2>
-      <p className="text-muted">Read Contacts and Follow-ups directly from your configured private workbook. No downloads needed. Preview first, then confirm creation. Already-linked rows are shown but left unchanged in this step.</p>
+      <p className="text-muted">Read Contacts and Follow-ups directly from your configured private workbook. No downloads needed. Keep workbook structure unchanged during preview and confirmation. Preview first, then confirm creation. Already-linked rows are shown but left unchanged in this step.</p>
       {!googleEnabled && enabled !== null && <Notice>Direct Google import is not enabled yet. The CRM owner must finish the read-only Google connection setup.</Notice>}
       <div><Button disabled={!googleEnabled || busy || unconfirmed} onClick={() => void previewGoogle()}>Preview new records from Google Sheet</Button></div>
     </Card>

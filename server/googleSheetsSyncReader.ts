@@ -55,7 +55,10 @@ export function createGoogleSheetsSyncReader(config: {
   spreadsheetId: string
   getAccessToken: () => Promise<string>
   fetch?: typeof fetch
-  /** Fetch headers and only these columns; omitted cell values never leave Google. */
+  /** Select ranges from observed headers and verify them in the data response.
+   * A concurrent column move can bring unintended values into transit; discard
+   * the whole response on header drift. Keep workbook structure fixed during use.
+   */
   columns?: Record<SyncSheetTitle, readonly string[]>
 }): { read: () => Promise<GoogleSheetsSyncSnapshot> } {
   if (!/^[A-Za-z0-9_-]{10,200}$/.test(config.spreadsheetId)) fail('configuration')
@@ -166,7 +169,7 @@ export function createGoogleSheetsSyncReader(config: {
             rows[index]!.values[col] = row.values?.[0] ?? {}
           })
         }
-        // Retain omitted header names for disclosure, never their cell contents.
+        // After verifying requested headers, retain omitted names for disclosure, not cell contents.
         rows[0] = { values: headers.map(stringValue => ({ userEnteredValue: { stringValue } })) }
         got.data = [{ rowData: rows }]
       }
