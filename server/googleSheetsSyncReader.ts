@@ -72,7 +72,8 @@ export function createGoogleSheetsSyncReader(config: {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 10_000)
     try {
-      const result = await fetcher(`${base}?${params}`, { method: 'GET', redirect: 'error', signal: controller.signal,
+      // Workers only supports manual/follow; the non-2xx guard below rejects redirects.
+      const result = await fetcher(`${base}?${params}`, { method: 'GET', redirect: 'manual', signal: controller.signal,
         headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } })
       if (result.status === 401 || result.status === 403) return fail('unauthorized')
       if (!result.ok) return fail('unavailable')

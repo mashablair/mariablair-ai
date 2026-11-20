@@ -28,7 +28,8 @@ export function createGoogleReadToken(config: {
       const assertion = encode({ alg: 'RS256', typ: 'JWT' }) + '.' +
         encode({ iss: config.account, scope, aud: endpoint, iat, exp: iat + 300 })
       const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(assertion))
-      const res = await fetcher(endpoint, { method: 'POST', redirect: 'error', signal: controller.signal,
+      // Workers only supports manual/follow; the non-2xx guard below rejects redirects.
+      const res = await fetcher(endpoint, { method: 'POST', redirect: 'manual', signal: controller.signal,
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
         body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
           assertion: assertion + '.' + base64url(new Uint8Array(signature)) }) })

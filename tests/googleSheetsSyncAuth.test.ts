@@ -11,7 +11,7 @@ describe('Google sync read-only authorization (mock network)', () => {
   it('signs a narrow, short-lived assertion with a pinned recipient and shares work within one request', async () => {
     const fetcher = vi.fn(async (url, init) => {
       expect(url).toBe('https://oauth2.googleapis.com/token')
-      expect(init.redirect).toBe('error')
+      expect(init.redirect).toBe('manual')
       expect(init.method).toBe('POST')
       const [header, claims, sig] = init.body.get('assertion').split('.')
       expect(JSON.parse(Buffer.from(header, 'base64url').toString())).toEqual({ alg: 'RS256', typ: 'JWT' })
@@ -24,6 +24,13 @@ describe('Google sync read-only authorization (mock network)', () => {
     expect(await Promise.all([getToken(), getToken(), getToken()])).toEqual(Array(3).fill('synthetic_access'))
     expect(await getToken()).toBe('synthetic_access')
     expect(fetcher).toHaveBeenCalledTimes(1)
+  })
+  it('rejects a redirect without sending the assertion anywhere else', async () => {
+    const fetcher = vi.fn().mockResolvedValue(Response.redirect('https://other.invalid', 307))
+    const token = createGoogleReadToken({ account, privateKey: pem, fetch: fetcher })
+    await expect(token()).rejects.toThrow('Google Sheets authorization unavailable.')
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    expect(fetcher.mock.calls[0]?.[1]?.redirect).toBe('manual')
   })
   it('rejects malformed or attacker-chosen account, keys, and OAuth responses, without disclosure', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response('private provider payload', { status: 403 }))

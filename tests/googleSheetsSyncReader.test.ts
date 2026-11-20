@@ -25,9 +25,16 @@ describe('Google Sheets sync read-only adapter', () => {
       expect(new URL(url).origin).toBe('https://sheets.googleapis.com')
       expect(new URL(url).pathname).toBe(`/v4/spreadsheets/${ID}`)
       expect(options.method).toBe('GET')
-      expect(options.redirect).toBe('error')
+      expect(options.redirect).toBe('manual')
     }
     expect(new URL(fetcher.mock.calls[1]![0]).searchParams.getAll('ranges')).toEqual(["'Contacts'!A1:C10", "'Follow-ups'!A1:C10"])
+  })
+  it('rejects a redirect without sending the access token anywhere else', async () => {
+    const fetcher = vi.fn().mockResolvedValue(Response.redirect('https://other.invalid', 307))
+    const reader = createGoogleSheetsSyncReader({ spreadsheetId: ID, getAccessToken: async () => 'token', fetch: fetcher })
+    await expect(reader.read()).rejects.toMatchObject({ code: 'unavailable' })
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    expect(fetcher.mock.calls[0]?.[1]?.redirect).toBe('manual')
   })
   it('rejects missing tabs before reading any cells', async () => {
     const m = meta(); m.sheets.pop()
