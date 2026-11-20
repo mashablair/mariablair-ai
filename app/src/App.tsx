@@ -8,6 +8,7 @@ import { ContactsPage } from '@/admin/crm/ContactsPage'
 import { EventPage, EventsPage } from '@/admin/crm/EventsPage'
 import { ImportContacts } from '@/admin/crm/ImportContacts'
 import { SheetsSyncPage } from '@/admin/sync/SheetsSyncPage'
+import { SheetsBootstrapPage } from '@/admin/sync/SheetsBootstrapPage'
 import { Dashboard } from '@/admin/Dashboard'
 import { IntakePage } from '@/admin/intake/IntakePage'
 import { MaterialsPage } from '@/admin/materials/MaterialsPage'
@@ -59,6 +60,7 @@ export function App() {
               <Route path="materials" element={<MaterialsPage />} />
               <Route path="billing" element={<BillingPage />} />
               <Route path="sync" element={<SheetsSyncPage />} />
+              <Route path="sync/import" element={<SheetsBootstrapPage />} />
             </Route>
             <Route path="/portal" element={<RequireAccount>{() => <PortalLayout />}</RequireAccount>}>
               <Route index element={<RequireAccount>{(account) => <PortalHome account={account} />}</RequireAccount>} />

@@ -69,7 +69,7 @@ export function createDurableSyncStore(rpc: Rpc, sheets: SheetReader, syntheticW
   }
 }
 
-async function connectionKey(id: string) {
+export async function connectionKey(id: string) {
   const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(id)))
   return Array.from(bytes, x => x.toString(16).padStart(2, '0')).join('')
 }

@@ -4,6 +4,7 @@ import { handleCallRequest } from './callRequest'
 import { realDeps, type Deps } from './deps'
 import { handleStripeWebhook } from './stripe'
 import { syncRoutes, type SyncApiDeps, realSyncDeps } from './sync/routes'
+import { bootstrapRoutes, type BootstrapDeps } from './sync/bootstrapRoutes'
 
 // Secrets and settings provided by Cloudflare (Pages secrets in production, .dev.vars locally).
 export type Env = {
@@ -15,6 +16,8 @@ export type Env = {
   TURNSTILE_SECRET_KEY?: string
   STRIPE_WEBHOOK_SECRET?: string
   PUBLIC_SITE_URL?: string
+  CRM_SHEETS_BOOTSTRAP_ENABLED?: string
+  CRM_SHEETS_BOOTSTRAP_CONNECTION?: string
   CRM_SHEETS_SYNC_MODE?: string
   CRM_SHEETS_SYNC_ID?: string
   CRM_SHEETS_SYNC_ACCOUNT?: string
@@ -25,7 +28,7 @@ export type AppContext = { Bindings: Env }
 
 // The API is deliberately thin: only things the browser must not do live here.
 // Written with Hono so it can move to a standalone Worker later without changes.
-export function createApp(deps: Deps = realDeps, syncDeps: SyncApiDeps = realSyncDeps) {
+export function createApp(deps: Deps = realDeps, syncDeps: SyncApiDeps = realSyncDeps, bootstrapDeps?: BootstrapDeps) {
   const app = new Hono<AppContext>().basePath('/api')
 
   // Says which integrations have their settings, without revealing any values.
@@ -43,6 +46,7 @@ export function createApp(deps: Deps = realDeps, syncDeps: SyncApiDeps = realSyn
   })
 
   app.route('/sync', syncRoutes(syncDeps))
+  app.route('/sheets-bootstrap', bootstrapRoutes(bootstrapDeps))
 
   app.post('/assessment', (c) => handleAssessment(c, deps))
   app.post('/call-request', (c) => handleCallRequest(c, deps))
