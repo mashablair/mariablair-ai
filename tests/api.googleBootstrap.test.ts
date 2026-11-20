@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createApp } from '../server/app'
 import type { BootstrapDeps } from '../server/sync/bootstrapRoutes'
+import { SheetsSyncReadError } from '../server/googleSheetsSyncReader'
 import { fictionalSource } from './fixtures/googleBootstrap'
 const owner = '00000000-0000-4000-8000-000000000001'
 const env = { SUPABASE_URL: 'https://fictional.invalid', SUPABASE_SERVICE_ROLE_KEY: 'fictional-key', CRM_SHEETS_SYNC_ID: 'fictional_workbook' }
@@ -73,8 +74,16 @@ describe('direct Google first import API', () => {
     const preview = await (await s.request('google/preview', {})).json()
     s.readGoogle.mockRejectedValue(new Error('PRIVATE_PROVIDER_CONTENT'))
     expect(await (await s.request('google/apply', { token: preview.token })).json()).toEqual({ error: 'apply_unconfirmed' })
-    expect(await (await s.request('google/preview', {})).json()).toEqual({ error: 'google_preview_unavailable' })
+    expect(await (await s.request('google/preview', {})).json()).toEqual({ error: 'google_source_check_failed' })
     expect(s.rpc).toHaveBeenCalledTimes(1); expect(log).not.toHaveBeenCalled(); log.mockRestore()
+  })
+  it('reports a safe stage for Google access and CRM preview failures', async () => {
+    const s = setup()
+    s.readGoogle.mockRejectedValueOnce(new SheetsSyncReadError('unauthorized'))
+    expect(await (await s.request('google/preview', {})).json()).toEqual({ error: 'google_read_access' })
+    expect(s.rpc).not.toHaveBeenCalled()
+    s.rpc.mockRejectedValueOnce(new Error('PRIVATE_DATABASE_ERROR'))
+    expect(await (await s.request('google/preview', {})).json()).toEqual({ error: 'crm_preview_unavailable' })
   })
   it('rejects expired tickets before Google or database IO', async () => {
     const s = setup(); const preview = await (await s.request('google/preview', {})).json()

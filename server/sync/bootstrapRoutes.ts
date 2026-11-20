@@ -4,6 +4,7 @@ import type { AppContext, Env } from '../app'
 import { adminClient } from '../deps'
 import { connectionKey } from './production'
 import { realSyncDeps } from './routes'
+import { SheetsSyncReadError } from '../googleSheetsSyncReader'
 import { googleBootstrapEnabled, readGoogleBootstrap, googleSourceDigest, sealGooglePreview, openGooglePreview } from './googleBootstrap'
 
 type BootstrapAction = 'preview' | 'apply'
@@ -111,17 +112,31 @@ export function bootstrapRoutes(deps: BootstrapDeps = realBootstrapDeps) {
   routes.post('/google/preview', async c => {
     if (!deps.googleEnabled?.(c.env) || !deps.readGoogle) return c.json({ error: 'import_disabled' }, 503)
     if (!z.object({}).strict().safeParse(await boundedJson(c.req.raw)).success) return c.json({ error: 'invalid_import' }, 400)
+    let source: Awaited<ReturnType<typeof readGoogleBootstrap>>
+    try { source = await deps.readGoogle(c.env) }
+    catch (err) {
+      if (err instanceof SheetsSyncReadError) {
+        if (err.code === 'unauthorized') return c.json({ error: 'google_read_access' }, 409)
+        if (err.code === 'unsupported_sheet') return c.json({ error: 'google_sheet_layout' }, 409)
+        return c.json({ error: 'google_preview_unavailable' }, 409)
+      }
+      return c.json({ error: 'google_source_check_failed' }, 409)
+    }
+    const parsed = googlePreviewSchema.safeParse({ contacts: source.contacts, tasks: source.tasks })
+    if (!parsed.success) return c.json({ error: 'invalid_google_import' }, 409)
+    const id = crypto.randomUUID()
+    let plan: z.infer<typeof googlePlanSchema>
     try {
-      const source = await deps.readGoogle(c.env)
-      const parsed = googlePreviewSchema.safeParse({ contacts: source.contacts, tasks: source.tasks })
-      if (!parsed.success) return c.json({ error: 'invalid_google_import' }, 409)
-      const id = crypto.randomUUID()
       const reply = await deps.rpc(c.env, 'preview', c.get('bootstrapAdmin'), { id, ...parsed.data })
-      const plan = googlePlanSchema.parse(reply)
+      plan = googlePlanSchema.parse(reply)
+    } catch (err) {
+      return c.json({ error: err instanceof BootstrapRpcError ? err.code : 'crm_preview_unavailable' }, 409)
+    }
+    try {
       // Opaque apply token: never disclose the database UUID to the browser.
       const token = await sealGooglePreview(c.env, c.get('bootstrapAdmin'), id, await googleSourceDigest(source))
       return c.json({ preview: { canApply: plan.canApply, contacts: plan.contacts, tasks: plan.tasks }, source, token })
-    } catch { return c.json({ error: 'google_preview_unavailable' }, 409) }
+    } catch { return c.json({ error: 'preview_ticket_unavailable' }, 409) }
   })
   routes.post('/google/apply', async c => {
     if (!deps.googleEnabled?.(c.env) || !deps.readGoogle) return c.json({ error: 'import_disabled' }, 503)

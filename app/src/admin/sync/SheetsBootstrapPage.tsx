@@ -79,8 +79,19 @@ function LiveBootstrap() {
     reset(); setBusy(true)
     try {
       setReview(await request<{ preview: Preview; source: ParsedCsv; token: string }>('google/preview', {}))
-    } catch {
-      setError('Could not preview both Google tabs. Check access, required headers, unique stable IDs and plain-text ISO dates. No CRM records were changed. Unsupported cells, duplicate IDs or missing contact references block the whole preview.')
+    } catch (err) {
+      const messages: Record<string, string> = {
+        google_read_access: 'The CRM could not get read access from Google. No Sheet edits are needed yet.',
+        google_sheet_layout: 'The CRM could not verify the expected Contacts and Follow-ups tab layout.',
+        invalid_google_import: 'At least one Sheet row did not pass validation. Check IDs, task links, duplicate actions and plain-text dates.',
+        crm_preview_unavailable: 'The CRM read the Sheet but could not save the preview. No Sheet edits are needed.',
+        sync_busy: 'A sync is already in progress or needs review. Nothing was imported.',
+        preview_ticket_unavailable: 'The CRM could not open the confirmation step. Preview again before importing.',
+        google_source_check_failed: 'The CRM could not verify the configured Google Sheet or its supported fields.',
+      }
+      const code = err instanceof Error ? err.message : ''
+      const reason = Object.hasOwn(messages, code) ? messages[code] : 'The CRM could not finish the Google Sheet preview.'
+      setError(reason + ' No CRM records were changed.')
     } finally { setBusy(false) }
   }
 
