@@ -49,5 +49,5 @@ export default defineConfig(({ command }) => ({
   resolve: { alias: { '@shared': join(repoRoot, 'shared'), '@': join(repoRoot, 'app/src') } },
   build: { outDir: '../dist/app', emptyOutDir: true },
   server: { proxy: { '/api': 'http://localhost:8788' } },
-  test: { root: repoRoot, include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'], testTimeout: 30000 },
+  test: { root: repoRoot, include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'], testTimeout: 30000, hookTimeout: 30000 },
 }))

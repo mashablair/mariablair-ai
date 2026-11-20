@@ -144,3 +144,7 @@ Cloudflare Pages builds with `npm run build` and publishes `dist`. This reposito
 Database changes belong in `supabase/migrations/`. Apply them to the intended configured project with `npm run db:push`; this command changes the target database and is not needed for the sample-data demo.
 
 Paid-session booking uses a Stripe payment link; scheduling follows the checkout instructions. The free-call form uses the separate intake workflow described above. Offers and prices are business configuration, not demo guarantees.
+
+## Google Sheet sync (staged)
+
+The fictional-data sandbox at `/demo/admin/sync` is safe to try without credentials. Production sync is off by default. A separately configured deployment can preview or apply supported Google Sheet edits to existing, explicitly linked CRM records. The staged release cannot change the Google Sheet or add/delete records. See [setup, mapping, and rollout limits](docs/SHEETS_SYNC.md).
