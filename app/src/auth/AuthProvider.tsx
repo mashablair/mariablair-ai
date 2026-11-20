@@ -16,6 +16,7 @@ type Auth = {
   sendLink(email: string, redirectPath?: string): Promise<void>
   verifyCode(email: string, code: string): Promise<void>
   signOut(): Promise<void>
+  getAccessToken(): Promise<string | null>
   /** Demo only: flip between the admin and the client point of view. */
   setDemoRole?(role: 'admin' | 'client'): void
 }
@@ -25,6 +26,12 @@ export const useAuth = () => {
   const v = useContext(AuthContext)
   if (!v) throw new Error('useAuth outside AuthProvider')
   return v
+}
+
+async function getAccessToken() {
+  if (!supabase) return null
+  const { data, error } = await supabase.auth.getSession()
+  return error ? null : data.session?.access_token ?? null
 }
 
 const DEMO_ACCOUNTS: Record<'admin' | 'client', Account> = {
@@ -59,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const auth = useMemo<Auth>(
     () => ({
       state,
+      getAccessToken,
       async sendLink(email, redirectPath = '/login') {
         if (!supabase) throw new Error('Sign-in is not set up yet.')
         const { error } = await supabase.auth.signInWithOtp({
