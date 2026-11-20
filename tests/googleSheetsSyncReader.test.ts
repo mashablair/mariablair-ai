@@ -85,3 +85,48 @@ describe('Google Sheets reader rich-cell safety metadata', () => {
     expect(snap.tabs[0]!.rows[2]!.cells[2]).toMatchObject({ derived: true })
   })
 })
+
+describe('minimal import column reads', () => {
+  const columns = { Contacts: ['Contact ID', 'Name'], 'Follow-ups': ['Task ID', 'Action'] } as const
+  const headers = () => {
+    const d = data()
+    for (const sheet of d.sheets) sheet.data[0]!.rowData = [sheet.data[0]!.rowData[0]!]
+    return d
+  }
+  const projected = () => {
+    const d = data()
+    return { spreadsheetId: ID, sheets: d.sheets.map(s => ({ properties: s.properties,
+      data: columns[s.properties.title as keyof typeof columns].map(name => {
+        const col = s.data[0]!.rowData[0]!.values!.findIndex(c => c.userEnteredValue && 'stringValue' in c.userEnteredValue && c.userEnteredValue.stringValue === name)
+        return { startColumn: col, rowData: s.data[0]!.rowData.map(r => ({ values: r.values?.[col] ? [r.values[col]] : [] })) }
+      }) })) }
+  }
+  const reader = (d: unknown = projected()) => {
+    const fetcher = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify(meta())))
+      .mockResolvedValueOnce(new Response(JSON.stringify(headers()))).mockResolvedValueOnce(new Response(JSON.stringify(d)))
+    return { fetcher, read: createGoogleSheetsSyncReader({ spreadsheetId: ID, getAccessToken: async () => 'fictional', columns, fetch: fetcher }).read }
+  }
+  it('fetches headers, then only requested columns, retaining physical row positions', async () => {
+    const s = reader(); const snap = await s.read()
+    expect(snap.tabs[0]!.headers).toEqual(['Contact ID', 'Name', 'Status'])
+    expect(snap.tabs[0]!.rows[2]!.cells.map(c => c.value)).toEqual(['C001', 'Test Person', null])
+    expect(new URL(s.fetcher.mock.calls[1]![0]).searchParams.getAll('ranges')).toEqual(["'Contacts'!A1:C1", "'Follow-ups'!A1:C1"])
+    expect(new URL(s.fetcher.mock.calls[2]![0]).searchParams.getAll('ranges')).toEqual(["'Contacts'!A1:A10", "'Contacts'!B1:B10", "'Follow-ups'!A1:A10", "'Follow-ups'!C1:C10"])
+    for (const [, options] of s.fetcher.mock.calls) expect(options.method).toBe('GET')
+  })
+  it('rejects changed headers, missing columns and unexpected range positions', async () => {
+    const changed = projected(); changed.sheets[0]!.data[0]!.rowData[0]!.values = [literal('Changed ID')]
+    await expect(reader(changed).read()).rejects.toThrow()
+    const missing = projected(); missing.sheets[0]!.data.pop()
+    await expect(reader(missing).read()).rejects.toThrow()
+    const moved = projected(); moved.sheets[0]!.data[0]!.startColumn = 2
+    await expect(reader(moved).read()).rejects.toThrow()
+  })
+  it('bounds an undeclared streaming response before parsing it', async () => {
+    const cancel = vi.fn()
+    const body = new ReadableStream({ start(controller) { controller.enqueue(new Uint8Array(8_000_001)) }, cancel })
+    const fetcher = vi.fn().mockResolvedValue(new Response(body))
+    await expect(createGoogleSheetsSyncReader({ spreadsheetId: ID, getAccessToken: async () => 'fictional', fetch: fetcher }).read()).rejects.toMatchObject({ code: 'invalid_response' })
+    expect(cancel).toHaveBeenCalled()
+  })
+})

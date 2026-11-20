@@ -37,7 +37,7 @@ describe('first CSV import API boundaries', () => {
   it('does no import IO if disabled, even for a signed-in admin with a valid request', async () => {
     const { request, rpc } = setup(false)
     const status = await request('status', 'admin')
-    expect(await status.json()).toEqual({ enabled: false })
+    expect(await status.json()).toEqual({ enabled: false, googleEnabled: false })
     expect(status.headers.get('Cache-Control')).toBe('no-store')
     expect((await request('preview', 'admin', { contacts, tasks })).status).toBe(503)
     expect((await request('apply', 'admin', { id: previewId })).status).toBe(503)

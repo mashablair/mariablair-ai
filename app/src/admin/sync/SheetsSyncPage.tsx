@@ -198,8 +198,8 @@ function LiveSync() {
 
 export function SheetsSyncPage() {
   return <>
-    <PageHeader label="Admin tools" title="Google Sheet sync" actions={!IS_DEMO && <LinkButton to="/admin/sync/import" variant="outline">Import Sheet exports</LinkButton>} />
-    <p className="text-muted max-w-3xl mb-5">Review supported changes between Contacts and Follow-ups in your app and Google Sheet.</p>
+    <PageHeader label="Admin tools" title="Review linked Sheet edits" actions={!IS_DEMO && <LinkButton to="/admin/sync/import" variant="outline">Sync from Google Sheet</LinkButton>} />
+    <p className="text-muted max-w-3xl mb-5">Step 2: review supported edits to already-linked Contacts and Follow-ups. Use Sync from Google Sheet for step 1 to preview and create new records; each step needs separate confirmation.</p>
     {IS_DEMO ? <SyncSandbox /> : <LiveSync />}
   </>
 }

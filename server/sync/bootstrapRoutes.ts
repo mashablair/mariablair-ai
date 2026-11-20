@@ -4,11 +4,14 @@ import type { AppContext, Env } from '../app'
 import { adminClient } from '../deps'
 import { connectionKey } from './production'
 import { realSyncDeps } from './routes'
+import { googleBootstrapEnabled, readGoogleBootstrap, googleSourceDigest, sealGooglePreview, openGooglePreview } from './googleBootstrap'
 
 type BootstrapAction = 'preview' | 'apply'
 export type BootstrapDeps = {
   adminUser: typeof realSyncDeps.adminUser
   enabled(env: Env): boolean
+  googleEnabled?(env: Env): boolean
+  readGoogle?: typeof readGoogleBootstrap
   rpc(env: Env, action: BootstrapAction, owner: string, args: object): Promise<unknown>
 }
 
@@ -24,10 +27,12 @@ class BootstrapRpcError extends Error {
 const realBootstrapDeps: BootstrapDeps = {
   adminUser: realSyncDeps.adminUser,
   enabled: bootstrapEnabled,
+  googleEnabled: googleBootstrapEnabled,
+  readGoogle: readGoogleBootstrap,
   async rpc(env, action, owner, args) {
     const actualKey = env.CRM_SHEETS_SYNC_ID ? await connectionKey(env.CRM_SHEETS_SYNC_ID) : undefined
     const key = env.CRM_SHEETS_BOOTSTRAP_CONNECTION ?? actualKey
-    if (!key || (actualKey && key !== actualKey)) throw new Error('CSV import unavailable.')
+    if (!key || (actualKey && key !== actualKey)) throw new Error('Import unavailable.')
     const { data, error } = await adminClient(env).rpc('crm_sheets_bootstrap', {
       p_connection: key,
       p_action: action, p_owner: owner, p_args: args,
@@ -37,7 +42,7 @@ const realBootstrapDeps: BootstrapDeps = {
     }
     if (error?.message === 'Bootstrap preview stale') throw new BootstrapRpcError('preview_stale')
     if (error?.message === 'Bootstrap blocked by active sync or recovery') throw new BootstrapRpcError('sync_busy')
-    if (error || !data) throw new Error('CSV import unavailable.')
+    if (error || !data) throw new Error('Import unavailable.')
     return data
   },
 }
@@ -51,15 +56,21 @@ const date = z.string().refine(value => {
 })
 const name = safeText(200).refine(x => !!x && x === x.trim() && !/[\x00-\x1f]/.test(x))
 const title = safeText(1000).refine(x => !!x.trim())
-const previewSchema = z.object({
+export const previewSchema = z.object({
   contacts: z.array(z.object({ id, name, source: safeText(1000), next_action: safeText(1000), follow_up_date: date }).strict()).min(1).max(200),
   tasks: z.array(z.object({ id, contact_id: id, title, due_date: date }).strict()).max(200),
 }).strict().refine(({ contacts, tasks }) => {
   const ids = new Set(contacts.map(contact => contact.id))
   return contacts.length + tasks.length <= 200 && ids.size === contacts.length
-    && new Set(tasks.map(t => t.id)).size === tasks.length && tasks.every(t => ids.has(t.contact_id))
+    && new Set(tasks.map(t => t.id)).size === tasks.length
+    && new Set(tasks.map(t => JSON.stringify([t.contact_id, t.title.trim().replace(/\s+/g, ' ').toLowerCase()]))).size === tasks.length && tasks.every(t => ids.has(t.contact_id))
 })
 const applySchema = z.object({ id: z.uuid() }).strict()
+const disposition = z.enum(['create', 'linked', 'blocked'])
+const googlePlanSchema = z.object({ canApply: z.boolean(), contacts: z.array(z.object({ id, name, disposition })),
+  tasks: z.array(z.object({ id, title, contact_id: id, disposition })) })
+const count = z.number().int().nonnegative()
+const googleResultSchema = z.object({ contactsCreated: count, tasksCreated: count, contactsSkipped: count, tasksSkipped: count })
 const BODY_LIMIT = 256_000
 async function boundedJson(req: Request): Promise<unknown> {
   if (Number(req.headers.get('Content-Length')) > BODY_LIMIT) return null
@@ -93,7 +104,36 @@ export function bootstrapRoutes(deps: BootstrapDeps = realBootstrapDeps) {
     c.set('bootstrapAdmin', owner)
     await next()
   })
-  routes.get('/status', c => c.json({ enabled: deps.enabled(c.env) }))
+  routes.get('/status', c => c.json({ enabled: deps.enabled(c.env), googleEnabled: deps.googleEnabled?.(c.env) ?? false }))
+  routes.post('/google/preview', async c => {
+    if (!deps.googleEnabled?.(c.env) || !deps.readGoogle) return c.json({ error: 'import_disabled' }, 503)
+    if (!z.object({}).strict().safeParse(await boundedJson(c.req.raw)).success) return c.json({ error: 'invalid_import' }, 400)
+    try {
+      const source = await deps.readGoogle(c.env)
+      const parsed = previewSchema.safeParse({ contacts: source.contacts, tasks: source.tasks })
+      if (!parsed.success) return c.json({ error: 'invalid_google_import' }, 409)
+      const id = crypto.randomUUID()
+      const reply = await deps.rpc(c.env, 'preview', c.get('bootstrapAdmin'), { id, ...parsed.data })
+      const plan = googlePlanSchema.parse(reply)
+      // Opaque apply token: never disclose the database UUID to the browser.
+      const token = await sealGooglePreview(c.env, c.get('bootstrapAdmin'), id, await googleSourceDigest(source))
+      return c.json({ preview: { canApply: plan.canApply, contacts: plan.contacts, tasks: plan.tasks }, source, token })
+    } catch { return c.json({ error: 'google_preview_unavailable' }, 409) }
+  })
+  routes.post('/google/apply', async c => {
+    if (!deps.googleEnabled?.(c.env) || !deps.readGoogle) return c.json({ error: 'import_disabled' }, 503)
+    const parsed = z.object({ token: z.string().min(1).max(2048) }).strict().safeParse(await boundedJson(c.req.raw))
+    if (!parsed.success) return c.json({ error: 'invalid_import' }, 400)
+    try {
+      const ticket = await openGooglePreview(c.env, c.get('bootstrapAdmin'), parsed.data.token)
+      if (ticket.expires <= Date.now()) return c.json({ error: 'preview_expired_or_blocked' }, 409)
+      const source = await deps.readGoogle(c.env)
+      if (await googleSourceDigest(source) !== ticket.digest) return c.json({ error: 'source_changed' }, 409)
+      const reply = googleResultSchema.parse(await deps.rpc(c.env, 'apply', c.get('bootstrapAdmin'), { id: ticket.id }))
+      return c.json({ contactsCreated: reply.contactsCreated, tasksCreated: reply.tasksCreated,
+        contactsSkipped: reply.contactsSkipped, tasksSkipped: reply.tasksSkipped })
+    } catch (err) { return c.json({ error: err instanceof BootstrapRpcError ? err.code : 'apply_unconfirmed' }, 409) }
+  })
   routes.post('/preview', async c => {
     if (!deps.enabled(c.env)) return c.json({ error: 'import_disabled' }, 503)
     const parsed = previewSchema.safeParse(await boundedJson(c.req.raw))
